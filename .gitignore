@@ -1,0 +1,6 @@
+.vscode/
+.pylintrc
+lsiv_output/
+.idea/
+__pycache__/
+*.pyc

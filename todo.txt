@@ -1,0 +1,23 @@
+- fix coordinates wrt to section being selected
+- skip tiles while scrolling/zooming
+- gazepoint config saving
+- load gazeheatplot.py as module
+- fix taskbar coordinates problem
+- jitter while panning
+- find a faster way to generate heatmaps
+- allow resolution to be changed while tracking
+- find a way to generate white tiles until the tile is formed
+- load tiles from previous sessions if they had the same svs file
+- consider saving tiles at quality 95? something to think about, or maybe while generating heatmap we could generate all the tiles so they don't have to be loaded from lower qual image
+- consider PIL for tiles
+- consider generating every time instead of saving
+
+Done:
+- multiple level CSVs
+- multiple heatmaps for multiple levels
+- trigger for tracking
+- generate tiles using multiple threads
+- change range to xrange as it is faster in python2 https://stackoverflow.com/questions/94935/what-is-the-difference-between-range-and-xrange-functions-in-python-2-x
+- different folders for different sessions
+- remove black tiles
+- make picture selector more efficient, currently it needlessly iterates over numbers
