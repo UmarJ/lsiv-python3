@@ -153,10 +153,9 @@ class DynamicTiling:
             t.join()
 
     def generate_tiles(self, path, file_names):
+        current_level_tiles = self.tiles_generated.setdefault(self.level, [])
         for file in file_names:
             if not os.path.isfile(self.level_path + file):
-                current_level_tiles = self.tiles_generated.setdefault(
-                    self.level, [])
                 column, row = file.split('_')
                 row = row.split('.')[0]
                 current_level_tiles.append((int(row), int(column)))
@@ -176,6 +175,10 @@ class DynamicTiling:
 
             self.level_path = new_path
             self.images_width, self.images_height = self.get_file_details()
+
+            # generate the (0, 0) tile if it does not exist (this is for heatmap generation)
+            if self.level not in self.tiles_generated:
+                self.generate_tiles(self.level_path, ['0_0.jpeg'])
 
 
 def split_list(input_list, parts):
