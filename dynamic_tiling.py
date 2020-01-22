@@ -3,12 +3,11 @@ import numpy as np
 import stitch
 from functools import partial
 from threading import Thread
-from datetime import datetime
 
 
 class DynamicTiling:
 
-    def __init__(self, deep_zoom_object, level, frame_width, frame_height):
+    def __init__(self, deep_zoom_object, level, frame_width, frame_height, folder_path):
         self.deep_zoom = deep_zoom_object
         self.max_level = deep_zoom_object.level_count
         self.level = level
@@ -16,14 +15,12 @@ class DynamicTiling:
         self.frame_height = frame_height
         self.file_extension = '.jpeg'
         self.images_width, self.images_height = self.get_file_details()
-        self.folder_path = os.path.dirname(os.path.abspath(
-            __file__)) + '/lsiv_output/' + datetime.now().strftime('%Y-%m-%d %H-%M-%S') + '/'
+        self.folder_path = folder_path
         self.tiles_folder_path = self.folder_path + 'tiles/'
         self.level_path = self.tiles_folder_path + str(level) + '/'
         self.tiles_generated = {}
 
-        os.makedirs(self.tiles_folder_path)
-        os.mkdir(self.level_path)
+        os.makedirs(self.level_path)
 
         print(self.level_path)
 

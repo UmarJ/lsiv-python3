@@ -6,6 +6,8 @@ from functools import partial
 from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 from threading import Thread
+import os
+from datetime import datetime
 import dynamic_tiling
 import tracking
 import heatmap_generation
@@ -15,8 +17,9 @@ class App(tk.Tk):
     def __init__(self, root_window, path, deep_zoom_object, level=0):
 
         self.deep_zoom_object = deep_zoom_object
+        folder_path = set_up_folder(deep_zoom_object)
         self.tile_generator = dynamic_tiling.DynamicTiling(
-            deep_zoom_object, level, 800, 600)
+            deep_zoom_object, level, 800, 600, folder_path)
         self.is_tracking = False
 
         self.root_window = root_window
@@ -175,12 +178,13 @@ class App(tk.Tk):
         ratio_w = float(new_dim[0]) / float(old_dim[0])
         ratio_h = float(new_dim[1]) / float(old_dim[1])
 
-        # TODO: fix zoom IT'S STILL BROKEN EVEN AFTER IVE WASTED AN HOUR ON IT
         centre_x = x * ratio_w
         centre_y = y * ratio_h
-        canvas_top_left = max(0, centre_x - (self.frame.width // 2)), max(0, centre_y - (self.frame.height // 2))
+        canvas_top_left = (max(0, centre_x - (self.frame.width // 2)),
+                           max(0, centre_y - (self.frame.height // 2)))
 
-        self.box_coords = (canvas_top_left[0], canvas_top_left[1], canvas_top_left[0] + self.frame.width, canvas_top_left[1] + self.frame.height)
+        self.box_coords = (canvas_top_left[0], canvas_top_left[1],
+                           canvas_top_left[0] + self.frame.width, canvas_top_left[1] + self.frame.height)
 
         image, self.top_left = self.tile_generator.generate_image(
             self.box_coords, (-1, -1))
@@ -190,7 +194,7 @@ class App(tk.Tk):
 
         self.image_on_canvas = self.canvas.create_image(
             canvas_top_left[0], canvas_top_left[1], image=self.image, anchor="nw")
-        
+
         scrollbar_x = canvas_top_left[0] / new_dim[0]
         scrollbar_y = canvas_top_left[1] / new_dim[1]
 
@@ -298,6 +302,7 @@ class FileSelection:
 
     def file_selection(self, event):
         root.file_path = filedialog.askopenfilename()
+        root.file_name = os.path.basename(root.file_path)
         print("root.file_path: {}".format(root.file_path))
 
         self.frame.pack_forget()
@@ -330,6 +335,25 @@ class LevelSelection:
         confirm.bind('<Button-1>', on_button_press)
 
         frame.pack(padx=50, pady=50)
+
+
+def set_up_folder(dz_generator):
+    folder_path = os.path.dirname(os.path.abspath(
+        __file__)) + '/lsiv_output/' + datetime.now().strftime('%Y-%m-%d %H-%M-%S') + '/'
+    os.makedirs(folder_path)
+    with open(os.path.join(folder_path, 'info.txt'), 'w+') as info:
+        level_count = dz_generator.level_count
+
+        info.write("File Name: {}\n".format(root.file_name))
+        info.write("Level Count: {}\n\n".format(level_count))
+        info.write("Level Details: \n\n")
+        info.write("{:>5} {:>7} {:>7}\n".format("Level", "Width", "Height"))
+
+        for level in range(level_count):
+            width, height = dz_generator.level_dimensions[level]
+            info.write("{:5} {:7} {:7}\n".format(level, width, height))
+
+    return folder_path
 
 
 def on_closing():

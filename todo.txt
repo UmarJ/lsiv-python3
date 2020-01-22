@@ -11,6 +11,7 @@
 - consider saving tiles at quality 95? something to think about, or maybe while generating heatmap we could generate all the tiles so they don't have to be loaded from lower qual image
 - consider PIL for tiles
 - consider generating every time instead of saving
+- reuse tiles generated for the same file
 
 Done:
 - multiple level CSVs
