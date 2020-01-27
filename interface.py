@@ -259,8 +259,7 @@ class App(tk.Tk):
             Thread(target=partial_function).start()
 
     def generate_heatmap(self, event):
-        heatmap_generation.stitch_images(
-            self.deep_zoom_object, self.tile_generator.tiles_generated, self.tile_generator.folder_path)
+        heatmap_generation.generate_heatmap(self.deep_zoom_object, self.tile_generator.folder_path)
 
 
 class ResizingFrame(tk.Frame):
