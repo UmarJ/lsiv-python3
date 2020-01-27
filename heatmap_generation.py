@@ -2,6 +2,9 @@ import os
 from PIL import Image
 import subprocess
 import pandas as pd
+import argparse
+from openslide import open_slide
+from openslide.deepzoom import DeepZoomGenerator
 
 
 def generate_heatmap(deep_zoom_object, folder_path, include_unvisited_tiles=True):
@@ -165,3 +168,14 @@ def construct_image(tiles_directory, present_tiles, first_index, count, dimensio
         current_x += tile.size[0]
 
     return result
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("svs", help="Path to the SVS file.")
+    parser.add_argument("lsiv_output", help="Path to the folder containing the CSV file and generated tiles directory.")
+    args = parser.parse_args()
+    svs_path = os.path.abspath(args.svs)
+    lsiv_output_path = os.path.abspath(args.lsiv_output)
+
+    generate_heatmap(DeepZoomGenerator(open_slide(svs_path)), lsiv_output_path)
