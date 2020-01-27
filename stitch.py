@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import cv2
+import os
 
 # TODO: PIL can do image stitching, no need to bother with np arrays
 
@@ -19,7 +20,7 @@ def join_horizontally(parts):
 def read_files(path, files):
     files_array = []
     for i in files:
-        img = cv2.cvtColor(cv2.imread(path + i), cv2.COLOR_BGR2RGB)
+        img = cv2.cvtColor(cv2.imread(os.path.join(path, i)), cv2.COLOR_BGR2RGB)
         files_array.append(img)
     return files_array
 

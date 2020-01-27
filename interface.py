@@ -337,8 +337,8 @@ class LevelSelection:
 
 
 def set_up_folder(dz_generator):
-    folder_path = os.path.dirname(os.path.abspath(
-        __file__)) + '/lsiv_output/' + datetime.now().strftime('%Y-%m-%d %H-%M-%S') + '/'
+    folder_path = os.path.join(os.path.dirname(os.path.abspath(
+        __file__)), 'lsiv_output', datetime.now().strftime('%Y-%m-%d %H-%M-%S'))
     os.makedirs(folder_path)
     with open(os.path.join(folder_path, 'info.txt'), 'w+') as info:
         level_count = dz_generator.level_count
