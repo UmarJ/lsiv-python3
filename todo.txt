@@ -12,6 +12,7 @@
 - consider PIL for tiles
 - consider generating every time instead of saving
 - reuse tiles generated for the same file
+- combine the zoom functions for different operating systems
 
 Done:
 - multiple level CSVs

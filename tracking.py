@@ -1,3 +1,4 @@
+import os
 import time
 gp = __import__("gazepoint.gazepoint")
 
@@ -14,16 +15,17 @@ def main(interface, resolution):
     current_level = tile_generator.level
     previous_level = current_level
 
-    csv_output = open(folder_path + "Level " + str(current_level) + ".csv", "a")
+    csv_output = open(os.path.join(folder_path, "Level " + str(current_level) + ".csv"), "a")
 
     while interface.is_tracking:
         box_coords = interface.box_coords
         previous_level = current_level
         current_level = tile_generator.level
 
+        # if the level changes, close the old csv and open a new csv file
         if previous_level != current_level:
             csv_output.close()
-            csv_output = open(folder_path + "Level " + str(current_level) + ".csv", "a")
+            csv_output = open(os.path.join(folder_path, "Level " + str(current_level) + ".csv"), "a")
 
         try:
             canvas_x = canvas.winfo_rootx()

@@ -18,14 +18,21 @@ class App(tk.Tk):
 
         self.deep_zoom_object = deep_zoom_object
         folder_path = set_up_folder(deep_zoom_object)
+
+        # the dynamic tile generator, responsible for providing the image to the canvas to display
         self.tile_generator = dynamic_tiling.DynamicTiling(
             deep_zoom_object, level, 800, 600, folder_path)
+
+        # shows whether the gaze tracker currently tracking
         self.is_tracking = False
 
         self.root_window = root_window
 
         self.bbox = []
         self.x = self.y = 0
+
+        # x coordinate at top-left, y coordinate at top-left,
+        # x coordinate at bottom-right, y coordinate at bottom-right
         self.box_coords = (0, 0, 0, 0)
         self.base_dir = path
 
@@ -34,22 +41,24 @@ class App(tk.Tk):
         self.frame = ResizingFrame(self.root_window, self)
         self.frame.pack(fill=tk.BOTH, expand=tk.YES)
 
-        self.canvas = tk.Canvas(
-            self.frame, bg="#FFFFFF", width=800, height=600)
+        self.canvas = tk.Canvas(self.frame, bg="#FFFFFF", width=800, height=600)
 
+        # set up the horizontal scroll bar
         self.hbar = tk.Scrollbar(self.frame, orient=tk.HORIZONTAL)
         self.hbar.pack(side=tk.BOTTOM, fill=tk.X)
         self.hbar.config(command=self.__scroll_x)
 
+        # set up the vertical scroll bar
         self.vbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
         self.vbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.vbar.config(command=self.__scroll_y)
 
+        # generate initial image for starting coordinates
         image, self.top_left = self.tile_generator.generate_image(
             (0, 0, 800, 600), (-1, -1))
-
         self.image = ImageTk.PhotoImage(image=image)
 
+        # set the image on the canvas
         self.image_on_canvas = self.canvas.create_image(
             self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
 
@@ -73,8 +82,7 @@ class App(tk.Tk):
         self.start_y = None
 
         self.set_scroll_region()
-        self.canvas.config(xscrollcommand=self.hbar.set,
-                           yscrollcommand=self.vbar.set)
+        self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
         self.canvas.pack(expand=tk.YES, fill=tk.BOTH)
 
     def set_scroll_region(self):
@@ -143,17 +151,18 @@ class App(tk.Tk):
         self.activate_bindings()
 
     def __scroll_x(self, *args):
-        """ Scroll canvas horizontally and redraw the image """
-        self.canvas.xview(*args)  # scroll horizontally
-        self.get_data()  # redraw the image
+        # scroll canvas horizontally and redraw the image
+        self.canvas.xview(*args)
+        self.get_data()
 
     def __scroll_y(self, *args):
-        """ Scroll canvas horizontally and redraw the image """
-        self.canvas.yview(*args)  # scroll horizontally
-        self.get_data()  # redraw the image
+        # scroll canvas horizontally and redraw the image
+        self.canvas.yview(*args)
+        self.get_data()
 
+    # zoom for MacOS and Windows
     def __wheel(self, event):
-        """ Zoom with mouse wheel """
+        # zoom with mouse wheel
 
         # get coordinates of the event on the canvas
         x = self.canvas.canvasx(event.x)
@@ -172,54 +181,67 @@ class App(tk.Tk):
         print(v_reg)
         print(h_reg)
 
+        # change the level in the tile generator to the new level
         self.tile_generator.change_level(self.tile_generator.level + change)
+        # get new image dimensions after level change
         new_dim = self.tile_generator.get_dim()
 
+        # find the ratio increase/decrease in width and height
         ratio_w = float(new_dim[0]) / float(old_dim[0])
         ratio_h = float(new_dim[1]) / float(old_dim[1])
 
+        # calculate new centre for the mouse after zooming in/out
         centre_x = x * ratio_w
         centre_y = y * ratio_h
+
+        # calculate the new top left for the canvas using the new centre
         canvas_top_left = (max(0, centre_x - (self.frame.width // 2)),
                            max(0, centre_y - (self.frame.height // 2)))
 
         self.box_coords = (canvas_top_left[0], canvas_top_left[1],
                            canvas_top_left[0] + self.frame.width, canvas_top_left[1] + self.frame.height)
 
+        # get the new image using the new coordinates
         image, self.top_left = self.tile_generator.generate_image(
             self.box_coords, (-1, -1))
 
         self.image = ImageTk.PhotoImage(image=image)
-        self.canvas.delete(self.image_on_canvas)
 
+        # delete the old image and set the new image
+        self.canvas.delete(self.image_on_canvas)
         self.image_on_canvas = self.canvas.create_image(
             canvas_top_left[0], canvas_top_left[1], image=self.image, anchor="nw")
 
         scrollbar_x = canvas_top_left[0] / new_dim[0]
         scrollbar_y = canvas_top_left[1] / new_dim[1]
 
+        # set new dimensions as scroll region
         self.canvas.config(scrollregion=(0, 0, new_dim[0], new_dim[1]))
+
+        # move the canvas to the calculated coordinates
         self.canvas.xview_moveto(scrollbar_x)
         self.canvas.yview_moveto(scrollbar_y)
 
         self.get_data()
 
+    # zoom in for Linux
     def __wheelup(self, event):
         self.tile_generator.change_level(self.tile_generator.level + 1)
         self.set_scroll_region()
         self.get_data()
 
+    # zoom out for Linux
     def __wheeldown(self, event):
         self.tile_generator.change_level(self.tile_generator.level - 1)
         self.set_scroll_region()
         self.get_data()
 
     def move_from(self, event):
-        ''' Remember previous coordinates for scrolling with the mouse '''
+        # remember previous coordinates for scrolling with the mouse
         self.canvas.scan_mark(event.x, event.y)
 
     def move_to(self, event):
-        ''' Drag (move) canvas to the new position '''
+        # drag (move) canvas to the new position
         self.canvas.scan_dragto(event.x, event.y, gain=1)
         self.get_data()  # redraw the image
 
@@ -281,6 +303,7 @@ class ResizingFrame(tk.Frame):
         print("width changed to {} height changed to {}".format(
             self.width, self.height))
 
+        # when the frame is resized, change the dimensions in the app and re-generate the image
         self.app.tile_generator.frame_width = self.width
         self.app.tile_generator.frame_height = self.height
         self.app.get_data()
@@ -293,6 +316,7 @@ class FileSelection:
         self.master = master
         self.frame = tk.Frame(self.master)
 
+        # select file button
         select_button = tk.Button(self.frame, text='Select File')
         select_button.pack(fill=tk.X)
         select_button.bind('<Button-1>', self.file_selection)
@@ -300,7 +324,10 @@ class FileSelection:
         self.frame.pack(padx=50, pady=50)
 
     def file_selection(self, event):
+        # open the file selection menu and get the file path
         root.file_path = filedialog.askopenfilename()
+
+        # separate the file name from the full path
         root.file_name = os.path.basename(root.file_path)
         print("root.file_path: {}".format(root.file_path))
 
@@ -319,11 +346,15 @@ class LevelSelection:
         dz_generator = DeepZoomGenerator(slide)
 
         select_level = ttk.Label(frame, text="Select Initial Level")
+        select_level.pack()
+
+        # combo box for initial level
         selection = ttk.Combobox(
             frame, values=[i for i in range(dz_generator.level_count)])
-        confirm = tk.Button(frame, text='OK')
-        select_level.pack()
         selection.pack()
+
+        # confirm button
+        confirm = tk.Button(frame, text='OK')
         confirm.pack()
 
         def on_button_press(event):
@@ -336,6 +367,7 @@ class LevelSelection:
         frame.pack(padx=50, pady=50)
 
 
+# function to set up the folders required and the information file
 def set_up_folder(dz_generator):
     folder_path = os.path.join(os.path.dirname(os.path.abspath(
         __file__)), 'lsiv_output', datetime.now().strftime('%Y-%m-%d %H-%M-%S'))
@@ -343,11 +375,13 @@ def set_up_folder(dz_generator):
     with open(os.path.join(folder_path, 'info.txt'), 'w+') as info:
         level_count = dz_generator.level_count
 
+        # write details to the file
         info.write("File Name: {}\n".format(root.file_name))
         info.write("Level Count: {}\n\n".format(level_count))
         info.write("Level Details: \n\n")
         info.write("{:>5} {:>7} {:>7}\n".format("Level", "Width", "Height"))
 
+        # write width and height for each level
         for level in range(level_count):
             width, height = dz_generator.level_dimensions[level]
             info.write("{:5} {:7} {:7}\n".format(level, width, height))

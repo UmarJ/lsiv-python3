@@ -25,6 +25,7 @@ class DynamicTiling:
     def get_dim(self):
         return self.deep_zoom.level_dimensions[self.level]
 
+    # method to return each tile's width and height for the current level
     def get_file_details(self):
 
         self.columns, self.rows = self.deep_zoom.level_tiles[self.level]
@@ -113,16 +114,22 @@ class DynamicTiling:
 
     def stitch_parts(self, first_column, last_column, first_row, last_row):
 
+        # the list of files required
         files_list = [str(column) + '_' + str(row) + self.file_extension
                       for column in range(first_column, last_column + 1)
                       for row in range(first_row, last_row + 1)]
         self.generate_with_threads(self.level_path, files_list, num_threads=3)
 
+        # split the list so that each part consists of tiles of 1 column
         files_list = split_list(files_list, last_column - first_column + 1)
 
         image_columns = []
+
+        # join the tiles into columns
         for column in files_list:
             image_columns.append(stitch.join_vertically(self.level_path, column))
+
+        # stitch all the columns to form the image
         img = stitch.join_horizontally(image_columns)
 
         return img
@@ -152,6 +159,7 @@ class DynamicTiling:
                 image.save(os.path.join(path, file), "JPEG")
 
     def change_level(self, new_level):
+        # check bounds
         if new_level < self.max_level and new_level >= 0:
             self.level = new_level
             print("Now on level: {}".format(new_level))
@@ -161,10 +169,12 @@ class DynamicTiling:
             if not os.path.isdir(new_path):
                 os.mkdir(new_path)
 
+            # set the path to the new path
             self.level_path = new_path
             self.images_width, self.images_height = self.get_file_details()
 
 
+# helper function to split a list into parts
 def split_list(input_list, parts):
     part_length = len(input_list) // parts
     output_list = []
@@ -173,4 +183,4 @@ def split_list(input_list, parts):
         output_list.append(input_list[i * part_length: (i + 1) * part_length])
     # append what is left of the list
     output_list.append(input_list[(parts - 1) * part_length:])
-    return(output_list)
+    return output_list
