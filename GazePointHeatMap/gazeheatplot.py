@@ -42,8 +42,8 @@ def draw_display(dispsize, imagefile=None):
         # width and height of the image
         w, h = len(img[0]), len(img)
         # x and y position of the image on the display
-        x = dispsize[0] / 2 - w / 2
-        y = dispsize[1] / 2 - h / 2
+        x = int(dispsize[0] / 2 - w / 2)
+        y = int(dispsize[1] / 2 - h / 2)
         # draw the image on the screen
         screen[y:y + h, x:x + w, :] += img
     # dots per inch
@@ -132,7 +132,7 @@ def draw_heatmap(gazepoints, dispsize, imagefile=None, alpha=0.5, savefilename=N
     gsdwh = gwh / 6 if (gaussiansd is None) else gaussiansd
     gaus = gaussian(gwh, gsdwh)
     # matrix of zeroes
-    strt = gwh / 2
+    strt = int(gwh / 2)
     heatmapsize = dispsize[1] + 2 * strt, dispsize[0] + 2 * strt
     heatmap = numpy.zeros(heatmapsize, dtype=float)
     # create heatmap
