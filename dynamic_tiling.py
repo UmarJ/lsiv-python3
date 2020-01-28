@@ -3,12 +3,11 @@ import numpy as np
 import stitch
 from functools import partial
 from threading import Thread
-from datetime import datetime
 
 
 class DynamicTiling:
 
-    def __init__(self, deep_zoom_object, level, frame_width, frame_height):
+    def __init__(self, deep_zoom_object, level, frame_width, frame_height, folder_path):
         self.deep_zoom = deep_zoom_object
         self.max_level = deep_zoom_object.level_count
         self.level = level
@@ -16,20 +15,17 @@ class DynamicTiling:
         self.frame_height = frame_height
         self.file_extension = '.jpeg'
         self.images_width, self.images_height = self.get_file_details()
-        self.folder_path = os.path.dirname(os.path.abspath(
-            __file__)) + '/lsiv_output/' + datetime.now().strftime('%Y-%m-%d %H-%M-%S') + '/'
-        self.tiles_folder_path = self.folder_path + 'tiles/'
-        self.level_path = self.tiles_folder_path + str(level) + '/'
+        self.folder_path = folder_path
+        self.tiles_folder_path = os.path.join(folder_path, 'tiles')
+        self.level_path = os.path.join(self.tiles_folder_path, str(level))
         self.tiles_generated = {}
 
-        os.makedirs(self.tiles_folder_path)
-        os.mkdir(self.level_path)
-
-        print(self.level_path)
+        os.makedirs(self.level_path)
 
     def get_dim(self):
         return self.deep_zoom.level_dimensions[self.level]
 
+    # method to return each tile's width and height for the current level
     def get_file_details(self):
 
         self.columns, self.rows = self.deep_zoom.level_tiles[self.level]
@@ -44,8 +40,7 @@ class DynamicTiling:
         # the if is needed for images where there is only one tile, (0, 0)
         if self.columns > 1 and self.rows > 1:
 
-            width, height = self.deep_zoom.get_tile_dimensions(
-                self.level, (1, 1))
+            width, height = self.deep_zoom.get_tile_dimensions(self.level, (1, 1))
             self.column_width = width
             self.row_height = height
             images_width[:, :] = width
@@ -98,20 +93,17 @@ class DynamicTiling:
 
         bottom_row = image_bounds[3]
         # the 1 is added because of the first row
-        last_row = int((bottom_row - self.first_row_height) //
-                       self.row_height) + 1
+        last_row = int((bottom_row - self.first_row_height) // self.row_height) + 1
         if last_row >= self.rows:
             last_row = self.rows - 1
 
         top_left = (0, 0)
 
         if first_column != 0:
-            top_left = (self.first_column_width + (first_column - 1)
-                        * self.column_width, top_left[1])
+            top_left = (self.first_column_width + (first_column - 1) * self.column_width, top_left[1])
 
         if first_row != 0:
-            top_left = (top_left[0], self.first_row_height +
-                        (first_row - 1) * self.row_height)
+            top_left = (top_left[0], self.first_row_height + (first_row - 1) * self.row_height)
 
         if top_left == previous_top_left and top_left != (0, 0):
             return None, top_left
@@ -122,17 +114,22 @@ class DynamicTiling:
 
     def stitch_parts(self, first_column, last_column, first_row, last_row):
 
+        # the list of files required
         files_list = [str(column) + '_' + str(row) + self.file_extension
                       for column in range(first_column, last_column + 1)
                       for row in range(first_row, last_row + 1)]
         self.generate_with_threads(self.level_path, files_list, num_threads=3)
 
+        # split the list so that each part consists of tiles of 1 column
         files_list = split_list(files_list, last_column - first_column + 1)
 
         image_columns = []
+
+        # join the tiles into columns
         for column in files_list:
-            image_columns.append(
-                stitch.join_vertically(self.level_path, column))
+            image_columns.append(stitch.join_vertically(self.level_path, column))
+
+        # stitch all the columns to form the image
         img = stitch.join_horizontally(image_columns)
 
         return img
@@ -144,8 +141,7 @@ class DynamicTiling:
 
         for i in range(num_threads):
             # create a thread with a partial function
-            t = Thread(target=partial(
-                self.generate_tiles, path, file_names[i]))
+            t = Thread(target=partial(self.generate_tiles, path, file_names[i]))
             t.start()  # start the thread
             threads.append(t)
 
@@ -155,32 +151,30 @@ class DynamicTiling:
     def generate_tiles(self, path, file_names):
         current_level_tiles = self.tiles_generated.setdefault(self.level, [])
         for file in file_names:
-            if not os.path.isfile(self.level_path + file):
+            if not os.path.isfile(os.path.join(self.level_path, file)):
                 column, row = file.split('_')
                 row = row.split('.')[0]
                 current_level_tiles.append((int(row), int(column)))
-                image = self.deep_zoom.get_tile(
-                    self.level, (int(column), int(row)))
-                image.save(path + file, "JPEG")
+                image = self.deep_zoom.get_tile(self.level, (int(column), int(row)))
+                image.save(os.path.join(path, file), "JPEG")
 
     def change_level(self, new_level):
+        # check bounds
         if new_level < self.max_level and new_level >= 0:
             self.level = new_level
             print("Now on level: {}".format(new_level))
 
-            new_path = self.tiles_folder_path + str(new_level) + '/'
+            new_path = os.path.join(self.tiles_folder_path, str(new_level))
 
             if not os.path.isdir(new_path):
                 os.mkdir(new_path)
 
+            # set the path to the new path
             self.level_path = new_path
             self.images_width, self.images_height = self.get_file_details()
 
-            # generate the (0, 0) tile if it does not exist (this is for heatmap generation)
-            if self.level not in self.tiles_generated:
-                self.generate_tiles(self.level_path, ['0_0.jpeg'])
 
-
+# helper function to split a list into parts
 def split_list(input_list, parts):
     part_length = len(input_list) // parts
     output_list = []
@@ -189,4 +183,4 @@ def split_list(input_list, parts):
         output_list.append(input_list[i * part_length: (i + 1) * part_length])
     # append what is left of the list
     output_list.append(input_list[(parts - 1) * part_length:])
-    return(output_list)
+    return output_list
