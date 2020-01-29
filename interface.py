@@ -38,8 +38,20 @@ class App(tk.Tk):
 
         self.root_window.title("Large Scale Image Viewer")
         self.root_window.attributes("-fullscreen", True)
+
+
+        self.frame2 = tk.Frame(self.root_window ,width=50, height = 50)
+        self.frame2.pack(fill=None, expand=False)    
+
+        self.img = ImageTk.PhotoImage(file=r"C:\Users\smart\Documents\Projects\lsiv-python3\Assets\icon2x.png")
+        self.button = tk.Button(self.frame2,  
+                   fg="red",text="hello",image=self.img,width=50,height=25)
+        
+        self.button.pack(side=tk.LEFT,padx=(15,15),pady=(15,15))
         self.frame = ResizingFrame(self.root_window, self)
         self.frame.pack(fill=tk.BOTH, expand=tk.YES)
+
+        self.button1 = tk.Button(self.frame, text='Button1')
 
         self.canvas = tk.Canvas(self.frame, bg="#FFFFFF", width=800, height=600)
 
@@ -83,7 +95,7 @@ class App(tk.Tk):
 
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-        self.canvas.pack(expand=tk.YES, fill=tk.BOTH)
+        self.canvas.pack(expand=tk.YES, fill=tk.BOTH,padx=(100,100),pady=(100,100))
 
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
