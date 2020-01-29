@@ -43,7 +43,7 @@ class App(tk.Tk):
         self.frame2 = tk.Frame(self.root_window ,width=50, height = 50)
         self.frame2.pack(fill=None, expand=False)    
 
-        self.img = ImageTk.PhotoImage(file=r"C:\Users\smart\Documents\Projects\lsiv-python3\Assets\icon2x.png")
+        self.img = ImageTk.PhotoImage(file=r"Assets\icon2xOn.png")
         self.button = tk.Button(self.frame2,  
                    fg="red",text="hello",image=self.img,width=50,height=25)
         
