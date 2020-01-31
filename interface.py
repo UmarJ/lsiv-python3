@@ -45,9 +45,13 @@ class App(tk.Tk):
 
         self.img = ImageTk.PhotoImage(file=r"Assets\icon2xOn.png")
         self.button = tk.Button(self.frame2,  
-                   fg="red",text="hello",image=self.img,width=50,height=25)
-        
+                   fg="red",text="hello",image=self.img)
         self.button.pack(side=tk.LEFT,padx=(15,15),pady=(15,15))
+
+        self.zoomLabel = tk.Label(self.frame2,text="Zoom Level:",textvariable=self.tile_generator.level,font=("Helvetica", 14))
+        self.zoomLabel.pack(padx=(5,5),pady=(15,15))
+
+
         self.frame = ResizingFrame(self.root_window, self)
         self.frame.pack(fill=tk.BOTH, expand=tk.YES)
 
