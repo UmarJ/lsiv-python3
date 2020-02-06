@@ -38,8 +38,28 @@ class App(tk.Tk):
 
         self.root_window.title("Large Scale Image Viewer")
         self.root_window.attributes("-fullscreen", True)
+
+
+        self.frame2 = tk.Frame(self.root_window ,width=50, height = 50)
+        self.frame2.pack(fill=None, expand=False)    
+
+        self.imgEyeOff = ImageTk.PhotoImage(file=r"Assets\icon2xOff.png")
+        self.imgEyeOn = ImageTk.PhotoImage(file=r"Assets\icon2xOn.png")
+
+        self.button = tk.Button(self.frame2,fg="red",text="hello",image=self.imgEyeOff,command=self.start_stop_tracking)
+        self.button.pack(side=tk.LEFT,padx=(15,15),pady=(15,15))
+
+
+        self.zoomLabel = tk.Label(self.frame2,text = str(level) +"X" ,font=("Helvetica", 14),borderwidth=2, relief="groove")
+        self.zoomLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
+
+        self.notificationLabel = tk.Label(self.frame2,text="Gaze Recording Disabled",font=("Helvetica", 14),borderwidth=2, relief="groove")
+        self.notificationLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
+
         self.frame = ResizingFrame(self.root_window, self)
         self.frame.pack(fill=tk.BOTH, expand=tk.YES)
+
+        self.button1 = tk.Button(self.frame, text='Button1')
 
         self.canvas = tk.Canvas(self.frame, bg="#FFFFFF", width=800, height=600)
 
@@ -83,7 +103,7 @@ class App(tk.Tk):
 
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-        self.canvas.pack(expand=tk.YES, fill=tk.BOTH)
+        self.canvas.pack(expand=tk.YES, fill=tk.BOTH,padx=(100,100),pady=(100,100))
 
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
@@ -163,7 +183,6 @@ class App(tk.Tk):
     # zoom for MacOS and Windows
     def __wheel(self, event):
         # zoom with mouse wheel
-
         # get coordinates of the event on the canvas
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
@@ -183,6 +202,7 @@ class App(tk.Tk):
 
         # change the level in the tile generator to the new level
         self.tile_generator.change_level(self.tile_generator.level + change)
+        self.zoomLabel.config(text=str(self.tile_generator.level + change)+"X")
         # get new image dimensions after level change
         new_dim = self.tile_generator.get_dim()
 
@@ -272,8 +292,12 @@ class App(tk.Tk):
     def start_stop_tracking(self, event):
 
         if self.is_tracking:
+            self.notificationLabel.configure(text="Gaze Recording Disabled")
+            self.button.configure(image=self.imgEyeOff)
             self.is_tracking = False
         else:
+            self.button.configure(image=self.imgEyeOn)
+            self.notificationLabel.configure(text="Gaze Recording in Progress")    
             self.is_tracking = True
             resolution = (self.root_window.winfo_screenwidth(),
                           self.root_window.winfo_screenheight())  # a tuple for resolution
