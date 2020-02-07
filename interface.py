@@ -56,12 +56,15 @@ class App(tk.Tk):
         self.notificationLabel = tk.Label(self.frame2,text="Gaze Recording Disabled",font=("Helvetica", 14),borderwidth=2, relief="groove")
         self.notificationLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
 
+        self.fileLabel = tk.Label(self.frame2,text=str("File Name:\n"+root.file_name),borderwidth=2, relief="groove")
+        self.fileLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
+
         self.frame = ResizingFrame(self.root_window, self)
         self.frame.pack(fill=tk.BOTH, expand=tk.YES)
 
         self.button1 = tk.Button(self.frame, text='Button1')
 
-        self.canvas = tk.Canvas(self.frame, bg="#FFFFFF", width=800, height=600)
+        self.canvas = tk.Canvas(self.frame, bg="gray90", width=800, height=600)
 
         # set up the horizontal scroll bar
         self.hbar = tk.Scrollbar(self.frame, orient=tk.HORIZONTAL)
@@ -103,7 +106,7 @@ class App(tk.Tk):
 
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-        self.canvas.pack(expand=tk.YES, fill=tk.BOTH,padx=(100,100),pady=(100,100))
+        self.canvas.pack(expand=tk.YES, fill=tk.BOTH,padx=(100,100))
 
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
@@ -202,7 +205,7 @@ class App(tk.Tk):
 
         # change the level in the tile generator to the new level
         self.tile_generator.change_level(self.tile_generator.level + change)
-        self.zoomLabel.config(text=str(self.tile_generator.level + change)+"X")
+        self.zoomLabel.config(text=str(self.tile_generator.level)+"X")
         # get new image dimensions after level change
         new_dim = self.tile_generator.get_dim()
 
@@ -424,5 +427,6 @@ screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 
 app = FileSelection(root)
+root.configure()
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
