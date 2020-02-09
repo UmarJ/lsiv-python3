@@ -1,6 +1,8 @@
+
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
+from tkinter import messagebox
 from PIL import ImageTk
 from functools import partial
 from openslide import open_slide
@@ -15,6 +17,8 @@ import heatmap_generation
 
 class App(tk.Tk):
     def __init__(self, root_window, path, deep_zoom_object, level=0):
+
+        #root.configure(bg='black')
 
         self.deep_zoom_object = deep_zoom_object
         folder_path = set_up_folder(deep_zoom_object)
@@ -38,28 +42,34 @@ class App(tk.Tk):
 
         self.root_window.title("Large Scale Image Viewer")
         self.root_window.attributes("-fullscreen", True)
+        root.config(bg='gray80')
 
 
         self.frame2 = tk.Frame(self.root_window ,width=50, height = 50)
-        self.frame2.pack(fill=None, expand=False)    
+        self.frame2.config(bg='gray80')
+        self.frame2.pack(fill=None, expand=False)
+
 
         self.imgEyeOff = ImageTk.PhotoImage(file=r"Assets\icon2xOff.png")
         self.imgEyeOn = ImageTk.PhotoImage(file=r"Assets\icon2xOn.png")
 
-        self.button = tk.Button(self.frame2,fg="red",text="hello",image=self.imgEyeOff,command=self.start_stop_tracking)
+        self.button = tk.Button(self.frame2,fg="red",text="hello",bg='gray80',image=self.imgEyeOff,command=self.start_stop_tracking)
         self.button.pack(side=tk.LEFT,padx=(15,15),pady=(15,15))
 
-
-        self.zoomLabel = tk.Label(self.frame2,text = str(level) +"X" ,font=("Helvetica", 14),borderwidth=2, relief="groove")
+        self.zoomLabel = tk.Label(self.frame2,text = str(level) +"X" ,bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
         self.zoomLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
 
-        self.notificationLabel = tk.Label(self.frame2,text="Gaze Recording Disabled",font=("Helvetica", 14),borderwidth=2, relief="groove")
+        self.notificationLabel = tk.Label(self.frame2,text="Gaze Recording Disabled",bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
         self.notificationLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
 
-        self.fileLabel = tk.Label(self.frame2,text=str("File Name:\n"+root.file_name),borderwidth=2, relief="groove")
+        self.fileLabel = tk.Label(self.frame2,text=str("Source:\n"+root.file_name),bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
         self.fileLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
 
+        self.buttonClose = tk.Button(self.frame2, font=("Helvetica", 14), text="Close", bg='gray80', command=on_closing)
+        self.buttonClose.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+
         self.frame = ResizingFrame(self.root_window, self)
+        self.frame.config(bg='gray80')
         self.frame.pack(fill=tk.BOTH, expand=tk.YES)
 
         self.button1 = tk.Button(self.frame, text='Button1')
@@ -106,7 +116,7 @@ class App(tk.Tk):
 
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-        self.canvas.pack(expand=tk.YES, fill=tk.BOTH,padx=(100,100))
+        self.canvas.pack(expand=tk.YES, fill=tk.BOTH,padx=(100,100), pady=(0,10))
 
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
@@ -359,8 +369,9 @@ class FileSelection:
         print("root.file_path: {}".format(root.file_path))
 
         self.frame.pack_forget()
-        self.newWindow = tk.Toplevel(self.master)
-        self.app = LevelSelection(self.newWindow)
+        # self.newWindow = tk.Toplevel(self.master)
+        # self.app = LevelSelection(self.newWindow)
+        self.app = LevelSelection(self.master)
 
 
 class LevelSelection:
@@ -417,16 +428,16 @@ def set_up_folder(dz_generator):
 
 
 def on_closing():
-    root.destroy()
+    if messagebox.askokcancel("Quit", "Do you really wish to quit?"):
+        root.destroy()
 
 
 root = tk.Tk()
-root.minsize(width=200, height=160)
-
+root.minsize(width=250, height=125)
+root.title("WSI Viewer")
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 
 app = FileSelection(root)
-root.configure()
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
