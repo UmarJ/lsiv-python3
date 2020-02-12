@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -10,6 +9,7 @@ from openslide.deepzoom import DeepZoomGenerator
 from threading import Thread
 import os
 from datetime import datetime
+import json
 import dynamic_tiling
 import tracking
 import heatmap_generation
@@ -17,8 +17,6 @@ import heatmap_generation
 
 class App(tk.Tk):
     def __init__(self, root_window, path, deep_zoom_object, level=0):
-
-        #root.configure(bg='black')
 
         self.deep_zoom_object = deep_zoom_object
         folder_path = set_up_folder(deep_zoom_object)
@@ -406,23 +404,27 @@ class LevelSelection:
 
 
 # function to set up the folders required and the information file
+# Update (-Komal): converted from info.txt -> info.json for improved data retrieval
 def set_up_folder(dz_generator):
     folder_path = os.path.join(os.path.dirname(os.path.abspath(
         __file__)), 'lsiv_output', datetime.now().strftime('%Y-%m-%d %H-%M-%S'))
     os.makedirs(folder_path)
-    with open(os.path.join(folder_path, 'info.txt'), 'w+') as info:
-        level_count = dz_generator.level_count
 
-        # write details to the file
-        info.write("File Name: {}\n".format(root.file_name))
-        info.write("Level Count: {}\n\n".format(level_count))
-        info.write("Level Details: \n\n")
-        info.write("{:>5} {:>7} {:>7}\n".format("Level", "Width", "Height"))
+    level_count = dz_generator.level_count
+    level_details = [];
 
-        # write width and height for each level
-        for level in range(level_count):
-            width, height = dz_generator.level_dimensions[level]
-            info.write("{:5} {:7} {:7}\n".format(level, width, height))
+    for level in range(level_count):
+        width, height = dz_generator.level_dimensions[level]
+        level_details.append({"Level": level, "Width": width, "Height": height})
+
+    properties = {"File_Name": root.file_name,
+                  "File_Path:": root.file_path,
+                  "Level_Count": level_count,
+                  "Level_Details": level_details}
+
+    with open(os.path.join(folder_path, 'info.json'), 'w+') as info:
+        json.dump(properties, info, indent=4, separators=(',', ': '))
+        info.close()
 
     return folder_path
 
