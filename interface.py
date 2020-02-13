@@ -1,3 +1,5 @@
+import os
+#os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -7,7 +9,6 @@ from functools import partial
 from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 from threading import Thread
-import os
 from datetime import datetime
 import json
 import dynamic_tiling
@@ -418,7 +419,7 @@ def set_up_folder(dz_generator):
         level_details.append({"Level": level, "Width": width, "Height": height})
 
     properties = {"File_Name": root.file_name,
-                  "File_Path:": root.file_path,
+                  "File_Path": root.file_path,
                   "Level_Count": level_count,
                   "Level_Details": level_details}
 
