@@ -1,5 +1,5 @@
 import os
-os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
+#os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
 
 import tkinter as tk
 from tkinter import filedialog
