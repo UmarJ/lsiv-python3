@@ -129,6 +129,14 @@ class DynamicTiling:
         for column in files_list:
             image_columns.append(stitch.join_vertically(self.level_path, column))
 
+        minColumn = min([((np.array(i)).shape[0]) for i in image_columns])
+
+        for i in range(len(image_columns)):
+            npArray = np.array(image_columns[i])
+            if (npArray.shape[0] > minColumn):
+                image_columns[i] = npArray[:minColumn]
+
+
         # stitch all the columns to form the image
         img = stitch.join_horizontally(image_columns)
 
