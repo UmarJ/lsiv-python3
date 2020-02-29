@@ -62,6 +62,8 @@ class DynamicTiling:
 
     def generate_image(self, image_bounds, previous_top_left):
 
+        image_dimensions = self.get_dim()
+
         left_column = image_bounds[0]
 
         if left_column < 0:
@@ -107,6 +109,10 @@ class DynamicTiling:
 
         if top_left == previous_top_left and top_left != (0, 0):
             return None, top_left
+
+        if(image_dimensions[0] < self.frame_width and image_dimensions[1] < self.frame_height):
+            first_row = 0
+            first_column = 0
 
         img = self.stitch_parts(first_column, last_column, first_row, last_row)
 
