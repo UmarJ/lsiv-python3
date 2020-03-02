@@ -8,6 +8,13 @@ import os
 
 def join_vertically(dir_path, files):
     files_arr = read_files(dir_path, files)
+
+    #Calculating minimum width for each part in order to avoid concatenation shape mismatch
+    minWidth = min([(i.shape[1]) for i in files_arr])
+    for i in range( len(files_arr)):
+            if (files_arr[i].shape[1] > minWidth):
+                files_arr[i] = (files_arr[i])[:,:minWidth]
+
     final_image = np.concatenate(files_arr)
     return final_image
 
