@@ -1,5 +1,5 @@
 import os
-#os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
+# os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -43,26 +43,26 @@ class App(tk.Tk):
         self.root_window.attributes("-fullscreen", True)
         root.config(bg='gray80')
 
-
-        self.frame2 = tk.Frame(self.root_window ,width=50, height = 50)
+        self.frame2 = tk.Frame(self.root_window, width=50, height=50)
         self.frame2.config(bg='gray80')
         self.frame2.pack(fill=None, expand=False)
 
+        assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
-        self.imgEyeOff = ImageTk.PhotoImage(file=r"Assets\icon2xOff.png")
-        self.imgEyeOn = ImageTk.PhotoImage(file=r"Assets\icon2xOn.png")
+        self.imgEyeOff = ImageTk.PhotoImage(file=os.path.join(assets_dir, "icon2xOff.png"))
+        self.imgEyeOn = ImageTk.PhotoImage(file=os.path.join(assets_dir, "icon2xOn.png"))
 
-        self.button = tk.Button(self.frame2,fg="red",text="hello",bg='gray80',image=self.imgEyeOff,command=self.start_stop_tracking)
-        self.button.pack(side=tk.LEFT,padx=(15,15),pady=(15,15))
+        self.button = tk.Button(self.frame2, fg="red", text="hello", bg='gray80', image=self.imgEyeOff, command=self.start_stop_tracking)
+        self.button.pack(side=tk.LEFT, padx=(15, 15), pady=(15, 15))
 
-        self.zoomLabel = tk.Label(self.frame2,text = str(level) +"X" ,bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
-        self.zoomLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
+        self.zoomLabel = tk.Label(self.frame2, text=str(level) + "x", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        self.zoomLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
-        self.notificationLabel = tk.Label(self.frame2,text="Gaze Recording Disabled",bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
-        self.notificationLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
+        self.notificationLabel = tk.Label(self.frame2, text="Gaze Recording Disabled", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        self.notificationLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
-        self.fileLabel = tk.Label(self.frame2,text=str("Source:\n"+root.file_name),bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
-        self.fileLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
+        self.fileLabel = tk.Label(self.frame2, text=str("Source:\n" + root.file_name), bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        self.fileLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
         self.buttonClose = tk.Button(self.frame2, font=("Helvetica", 14), text="Close", bg='gray80', command=on_closing)
         self.buttonClose.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
@@ -115,7 +115,7 @@ class App(tk.Tk):
 
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-        self.canvas.pack(expand=tk.YES, fill=tk.BOTH,padx=(100,100), pady=(0,10))
+        self.canvas.pack(expand=tk.YES, fill=tk.BOTH, padx=(100, 100), pady=(0, 10))
 
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
@@ -192,29 +192,17 @@ class App(tk.Tk):
         self.canvas.yview(*args)
         self.get_data()
 
-    # zoom for MacOS and Windows
-    def __wheel(self, event):
-        # zoom with mouse wheel
+    def zoom(self, event, change):
         # get coordinates of the event on the canvas
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
 
         old_dim = self.tile_generator.get_dim()
 
-        if event.delta == -120:  # zoom out
-            change = -1
-        else:  # zoom in
-            change = +1
-
-        v_reg = self.vbar.get()
-        h_reg = self.hbar.get()
-
-        print(v_reg)
-        print(h_reg)
-
         # change the level in the tile generator to the new level
         self.tile_generator.change_level(self.tile_generator.level + change)
-        self.zoomLabel.config(text=str(self.tile_generator.level)+"X")
+        self.zoomLabel.config(text=str(self.tile_generator.level) + "x")
+
         # get new image dimensions after level change
         new_dim = self.tile_generator.get_dim()
 
@@ -256,17 +244,22 @@ class App(tk.Tk):
 
         self.get_data()
 
+    # zoom for MacOS and Windows
+    def __wheel(self, event):
+        if event.delta == -120:  # zoom out
+            change = -1
+        else:  # zoom in
+            change = +1
+
+        self.zoom(event, change)
+
     # zoom in for Linux
     def __wheelup(self, event):
-        self.tile_generator.change_level(self.tile_generator.level + 1)
-        self.set_scroll_region()
-        self.get_data()
+        self.zoom(event, +1)
 
     # zoom out for Linux
     def __wheeldown(self, event):
-        self.tile_generator.change_level(self.tile_generator.level - 1)
-        self.set_scroll_region()
-        self.get_data()
+        self.zoom(event, -1)
 
     def move_from(self, event):
         # remember previous coordinates for scrolling with the mouse
@@ -309,7 +302,7 @@ class App(tk.Tk):
             self.is_tracking = False
         else:
             self.button.configure(image=self.imgEyeOn)
-            self.notificationLabel.configure(text="Gaze Recording in Progress")    
+            self.notificationLabel.configure(text="Gaze Recording in Progress")
             self.is_tracking = True
             resolution = (self.root_window.winfo_screenwidth(),
                           self.root_window.winfo_screenheight())  # a tuple for resolution
@@ -412,7 +405,7 @@ def set_up_folder(dz_generator):
     os.makedirs(folder_path)
 
     level_count = dz_generator.level_count
-    level_details = [];
+    level_details = []
 
     for level in range(level_count):
         width, height = dz_generator.level_dimensions[level]
