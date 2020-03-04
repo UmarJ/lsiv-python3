@@ -142,7 +142,6 @@ class DynamicTiling:
             if (npArray.shape[0] > minColumn):
                 image_columns[i] = npArray[:minColumn]
 
-
         # stitch all the columns to form the image
         img = stitch.join_horizontally(image_columns)
 
