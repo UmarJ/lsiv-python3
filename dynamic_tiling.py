@@ -3,16 +3,17 @@ import numpy as np
 import stitch
 from functools import partial
 from threading import Thread
+from math import ceil
 
 
 class DynamicTiling:
 
-    def __init__(self, deep_zoom_object, level, frame_width, frame_height, folder_path):
+    def __init__(self, deep_zoom_object, level, canvas_width, canvas_height, folder_path):
         self.deep_zoom = deep_zoom_object
         self.max_level = deep_zoom_object.level_count
         self.level = level
-        self.frame_width = frame_width
-        self.frame_height = frame_height
+        self.canvas_width = canvas_width
+        self.canvas_height = canvas_height
         self.file_extension = '.jpeg'
         self.images_width, self.images_height = self.get_file_details()
         self.folder_path = folder_path
@@ -64,38 +65,48 @@ class DynamicTiling:
 
         image_dimensions = self.get_dim()
 
+        # the number of pixels from the left border to the left most column
         left_column = image_bounds[0]
 
         if left_column < 0:
             left_column = 0
 
+        # the number of columns from the border to the left most column
         first_column = 0
-        if left_column >= self.first_column_width:
+        if left_column >= self.first_column_width: # first_column_width is included in left_column
             first_column += 1
             left_column -= self.first_column_width
         first_column += int(left_column // self.column_width)
 
+        # the number of pixels from the left border to the right most column
         right_column = image_bounds[2]
+
         # the 1 is added because of the first column
-        last_column = int(
-            (right_column - self.first_column_width) // self.column_width) + 1
+        # the ceil function ensures the last column with width < column_width is included
+        # the 2 is added because i dunno why it leaves empty space otherwise :/
+        last_column = ceil((right_column - self.first_column_width) / self.column_width) + 1 + 2
         if last_column >= self.columns:
             last_column = self.columns - 1
 
+        # the number of pixels from the top border to the top most row
         top_row = image_bounds[1]
 
         if top_row < 0:
             top_row = 0
 
+        # the number of rows from the border to the top most row
         first_row = 0
-        if top_row >= self.first_row_height:
+        if top_row >= self.first_row_height: # first_row_height is included in top_row
             first_row += 1
             top_row -= self.first_row_height
         first_row += int(top_row // self.row_height)
 
+        # the number of pixels from the top border to the bottom most row
         bottom_row = image_bounds[3]
+
         # the 1 is added because of the first row
-        last_row = int((bottom_row - self.first_row_height) // self.row_height) + 1
+        # the ceil function ensures the last row with height < row_height is included
+        last_row = ceil((bottom_row - self.first_row_height) / self.row_height) + 1
         if last_row >= self.rows:
             last_row = self.rows - 1
 
@@ -110,7 +121,7 @@ class DynamicTiling:
         if top_left == previous_top_left and top_left != (0, 0):
             return None, top_left
 
-        if(image_dimensions[0] < self.frame_width and image_dimensions[1] < self.frame_height):
+        if(image_dimensions[0] < self.canvas_width and image_dimensions[1] < self.canvas_height):
             first_row = 0
             first_column = 0
 

@@ -85,8 +85,9 @@ class App(tk.Tk):
         self.deep_zoom_object = deep_zoom_object
 
         # the dynamic tile generator, responsible for providing the image to the canvas to display
+        # TODO: The value it is initialized with might not always remain the same
         self.tile_generator = dynamic_tiling.DynamicTiling(
-            deep_zoom_object, level, 800, 600, tiles_folder)
+            deep_zoom_object, level, self.canvas.winfo_reqwidth(), self.canvas.winfo_reqheight(), tiles_folder)
 
         # generate initial image for starting coordinates
         image, self.top_left = self.tile_generator.generate_image(
@@ -258,9 +259,11 @@ class App(tk.Tk):
 
         self.canvas_vertex = (self.canvas.canvasx(0), self.canvas.canvasy(0))
         self.box_coords = (self.canvas_vertex[0], self.canvas_vertex[1],
-                           self.canvas_vertex[0] + self.frame.width, self.canvas_vertex[1] + self.frame.height)
+                           self.canvas_vertex[0] + self.canvas.winfo_reqwidth(), self.canvas_vertex[1] + self.canvas.winfo_reqheight())
 
-        # some weird bug with canvas being 0 when scrolling back to origin
+        print(self.box_coords)
+
+        # some weird bug with canvas being -1 when scrolling back to origin
         if self.box_coords[0] == -1:
             self.box_coords = (
                 self.box_coords[0] + 1, self.box_coords[1], self.box_coords[2] + 1, self.box_coords[3])
@@ -443,8 +446,6 @@ def on_closing():
 root = tk.Tk()
 root.minsize(width=250, height=125)
 root.title("WSI Viewer")
-screen_width = root.winfo_screenwidth()
-screen_height = root.winfo_screenheight()
 
 app = FileSelection(root)
 root.protocol("WM_DELETE_WINDOW", on_closing)
