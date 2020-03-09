@@ -21,7 +21,7 @@ class DynamicTiling:
         self.level_path = os.path.join(self.tiles_folder_path, str(level))
         self.tiles_generated = {}
 
-        os.makedirs(self.level_path)
+        os.makedirs(self.level_path, exist_ok=True)
 
     def get_dim(self):
         return self.deep_zoom.level_dimensions[self.level]
@@ -118,6 +118,8 @@ class DynamicTiling:
         if first_row != 0:
             top_left = (top_left[0], self.first_row_height + (first_row - 1) * self.row_height)
 
+        # None is returned if the top left coordinate has not change,
+        # since the image will be the same and it does not need to be processed again
         if top_left == previous_top_left and top_left != (0, 0):
             return None, top_left
 
@@ -190,8 +192,7 @@ class DynamicTiling:
 
             new_path = os.path.join(self.tiles_folder_path, str(new_level))
 
-            if not os.path.isdir(new_path):
-                os.mkdir(new_path)
+            os.makedirs(new_path, exist_ok=True)
 
             # set the path to the new path
             self.level_path = new_path
