@@ -1,5 +1,7 @@
 import os
-#os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
+
+# os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
+
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -17,49 +19,35 @@ import heatmap_generation
 
 
 class App(tk.Tk):
-    def __init__(self, root_window, path, deep_zoom_object, level=0):
-
-        self.deep_zoom_object = deep_zoom_object
-        folder_path = set_up_folder(deep_zoom_object)
-
-        # the dynamic tile generator, responsible for providing the image to the canvas to display
-        self.tile_generator = dynamic_tiling.DynamicTiling(
-            deep_zoom_object, level, 800, 600, folder_path)
-
-        # shows whether the gaze tracker currently tracking
-        self.is_tracking = False
+    def __init__(self, root_window, deep_zoom_object, tiles_folder, level=0):
 
         self.root_window = root_window
 
         self.bbox = []
-        self.x = self.y = 0
+        self.x, self.y = 0, 0
 
         # x coordinate at top-left, y coordinate at top-left,
         # x coordinate at bottom-right, y coordinate at bottom-right
         self.box_coords = (0, 0, 0, 0)
-        self.base_dir = path
 
         self.root_window.title("Large Scale Image Viewer")
         self.root_window.attributes("-fullscreen", True)
         root.config(bg='gray80')
 
-
-        self.frame2 = tk.Frame(self.root_window ,width=50, height = 50)
+        self.frame2 = tk.Frame(self.root_window, width=50, height=50)
         self.frame2.config(bg='gray80')
         self.frame2.pack(fill=None, expand=False)
 
 
-        self.imgEyeOff = ImageTk.PhotoImage(file=r"Assets\icon2xOff.png")
-        self.imgEyeOn = ImageTk.PhotoImage(file=r"Assets\icon2xOn.png")
+        self.zoomLabel = tk.Label(self.frame2, text=str(level) + "x", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        self.zoomLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
-        self.button = tk.Button(self.frame2,fg="red",text="hello",bg='gray80',image=self.imgEyeOff,command=self.start_stop_tracking)
-        self.button.pack(side=tk.LEFT,padx=(15,15),pady=(15,15))
+        self.fileLabel = tk.Label(self.frame2, text=str("Source:\n" + root.file_name), bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        self.fileLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
-        self.zoomLabel = tk.Label(self.frame2,text = str(level) +"X" ,bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
-        self.zoomLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
+        self.buttonClose = tk.Button(self.frame2, font=("Helvetica", 14), text="Close", bg='gray80', command=on_closing)
+        self.buttonClose.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
-        self.notificationLabel = tk.Label(self.frame2,text="Gaze Recording Disabled",bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
-        self.notificationLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
 
         self.fileLabel = tk.Label(self.frame2,text=str("Source:\n"+root.file_name),bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
         self.fileLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
@@ -85,15 +73,6 @@ class App(tk.Tk):
         self.vbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.vbar.config(command=self.__scroll_y)
 
-        # generate initial image for starting coordinates
-        image, self.top_left = self.tile_generator.generate_image(
-            (0, 0, 800, 600), (-1, -1))
-        self.image = ImageTk.PhotoImage(image=image)
-
-        # set the image on the canvas
-        self.image_on_canvas = self.canvas.create_image(
-            self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
-
         # remember canvas position
         self.canvas.bind('<ButtonPress-1>', self.move_from)
         # move canvas to the new position
@@ -113,9 +92,26 @@ class App(tk.Tk):
         self.start_x = None
         self.start_y = None
 
+        self.deep_zoom_object = deep_zoom_object
+
+        # the dynamic tile generator, responsible for providing the image to the canvas to display
+        # TODO: The value it is initialized with might not always remain the same
+        self.tile_generator = dynamic_tiling.DynamicTiling(
+            deep_zoom_object, level, self.canvas.winfo_reqwidth(), self.canvas.winfo_reqheight(), tiles_folder)
+
+        # generate initial image for starting coordinates
+        image, self.top_left = self.tile_generator.generate_image(
+            (0, 0, 800, 600), (-1, -1))
+        self.image = ImageTk.PhotoImage(image=image)
+
+        # set the image on the canvas
+        self.image_on_canvas = self.canvas.create_image(
+            self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
+
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-        self.canvas.pack(expand=tk.YES, fill=tk.BOTH,padx=(100,100), pady=(0,10))
+        self.canvas.pack(expand=tk.YES, fill=tk.BOTH, padx=(100, 100), pady=(0, 10))
+
 
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
@@ -192,29 +188,17 @@ class App(tk.Tk):
         self.canvas.yview(*args)
         self.get_data()
 
-    # zoom for MacOS and Windows
-    def __wheel(self, event):
-        # zoom with mouse wheel
+    def zoom(self, event, change):
         # get coordinates of the event on the canvas
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
 
         old_dim = self.tile_generator.get_dim()
 
-        if event.delta == -120:  # zoom out
-            change = -1
-        else:  # zoom in
-            change = +1
-
-        v_reg = self.vbar.get()
-        h_reg = self.hbar.get()
-
-        print(v_reg)
-        print(h_reg)
-
         # change the level in the tile generator to the new level
         self.tile_generator.change_level(self.tile_generator.level + change)
-        self.zoomLabel.config(text=str(self.tile_generator.level)+"X")
+        self.zoomLabel.config(text=str(self.tile_generator.level) + "x")
+
         # get new image dimensions after level change
         new_dim = self.tile_generator.get_dim()
 
@@ -256,17 +240,22 @@ class App(tk.Tk):
 
         self.get_data()
 
+    # zoom for MacOS and Windows
+    def __wheel(self, event):
+        if event.delta == -120:  # zoom out
+            change = -1
+        else:  # zoom in
+            change = +1
+
+        self.zoom(event, change)
+
     # zoom in for Linux
     def __wheelup(self, event):
-        self.tile_generator.change_level(self.tile_generator.level + 1)
-        self.set_scroll_region()
-        self.get_data()
+        self.zoom(event, +1)
 
     # zoom out for Linux
     def __wheeldown(self, event):
-        self.tile_generator.change_level(self.tile_generator.level - 1)
-        self.set_scroll_region()
-        self.get_data()
+        self.zoom(event, -1)
 
     def move_from(self, event):
         # remember previous coordinates for scrolling with the mouse
@@ -281,9 +270,11 @@ class App(tk.Tk):
 
         self.canvas_vertex = (self.canvas.canvasx(0), self.canvas.canvasy(0))
         self.box_coords = (self.canvas_vertex[0], self.canvas_vertex[1],
-                           self.canvas_vertex[0] + self.frame.width, self.canvas_vertex[1] + self.frame.height)
+                           self.canvas_vertex[0] + self.canvas.winfo_reqwidth(), self.canvas_vertex[1] + self.canvas.winfo_reqheight())
 
-        # some weird bug with canvas being 0 when scrolling back to origin
+        print(self.box_coords)
+
+        # some weird bug with canvas being -1 when scrolling back to origin
         if self.box_coords[0] == -1:
             self.box_coords = (
                 self.box_coords[0] + 1, self.box_coords[1], self.box_coords[2] + 1, self.box_coords[3])
@@ -301,23 +292,51 @@ class App(tk.Tk):
             self.image_on_canvas = self.canvas.create_image(
                 top_left[0], top_left[1], image=self.image, anchor="nw")
 
-    def start_stop_tracking(self, event):
+    def generate_heatmap(self, event):
+        heatmap_generation.generate_heatmap(self.deep_zoom_object, self.tile_generator.folder_path)
+
+
+class Recorder(App):
+    def __init__(self, root_window, deep_zoom_object, level=0):
+        tiles_folder = set_up_folder(deep_zoom_object)
+        super(Recorder, self).__init__(root_window, deep_zoom_object, tiles_folder, level=level)
+
+        assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+
+        self.imgEyeOff = ImageTk.PhotoImage(file=os.path.join(assets_dir, "icon2xOff.png"))
+        self.imgEyeOn = ImageTk.PhotoImage(file=os.path.join(assets_dir, "icon2xOn.png"))
+
+        # TODO: Fix the order of buttons
+        self.notificationLabel = tk.Label(self.frame2, text="Gaze Recording Disabled", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        self.notificationLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+
+        self.gazeToggleButton = tk.Button(self.frame2, fg="red", text="hello", bg='gray80', image=self.imgEyeOff, command=self.start_stop_tracking)
+        self.gazeToggleButton.pack(side=tk.LEFT, padx=(15, 15), pady=(15, 15))
+
+        # shows whether the gaze tracker is currently tracking
+        self.is_tracking = False
+
+    # event=None is needed because binding to a button does not generate an event
+    def start_stop_tracking(self, event=None):
 
         if self.is_tracking:
             self.notificationLabel.configure(text="Gaze Recording Disabled")
-            self.button.configure(image=self.imgEyeOff)
+            self.gazeToggleButton.configure(image=self.imgEyeOff)
             self.is_tracking = False
         else:
-            self.button.configure(image=self.imgEyeOn)
-            self.notificationLabel.configure(text="Gaze Recording in Progress")    
+            self.gazeToggleButton.configure(image=self.imgEyeOn)
+            self.notificationLabel.configure(text="Gaze Recording in Progress")
             self.is_tracking = True
             resolution = (self.root_window.winfo_screenwidth(),
-                          self.root_window.winfo_screenheight())  # a tuple for resolution
+                          self.root_window.winfo_screenheight()) # a tuple for resolution
             partial_function = partial(tracking.main, self, resolution)
             Thread(target=partial_function).start()
 
-    def generate_heatmap(self, event):
-        heatmap_generation.generate_heatmap(self.deep_zoom_object, self.tile_generator.folder_path)
+
+class Visualiser(App):
+    def __init__(self, root_window, deep_zoom_object, level=0):
+        tiles_folder = set_up_folder(deep_zoom_object)
+        super(Visualiser, self).__init__(root_window, deep_zoom_object, tiles_folder, level=level)
 
 
 class ResizingFrame(tk.Frame):
@@ -396,8 +415,8 @@ class LevelSelection:
 
         def on_button_press(event):
             frame.pack_forget()
-            App(root, root.file_path, deep_zoom_object=dz_generator,
-                level=int(selection.get()))
+            Recorder(root, deep_zoom_object=dz_generator,
+                     level=int(selection.get()))
 
         confirm.bind('<Button-1>', on_button_press)
 
@@ -412,7 +431,9 @@ def set_up_folder(dz_generator):
     os.makedirs(folder_path)
 
     level_count = dz_generator.level_count
-    level_details = [];
+
+    level_details = []
+
 
     for level in range(level_count):
         width, height = dz_generator.level_dimensions[level]
@@ -438,8 +459,6 @@ def on_closing():
 root = tk.Tk()
 root.minsize(width=250, height=125)
 root.title("WSI Viewer")
-screen_width = root.winfo_screenwidth()
-screen_height = root.winfo_screenheight()
 
 app = FileSelection(root)
 root.protocol("WM_DELETE_WINDOW", on_closing)
