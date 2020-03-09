@@ -65,7 +65,7 @@ class DynamicTiling:
 
         image_dimensions = self.get_dim()
 
-
+        # the number of pixels from the left border to the left most column
         left_column = image_bounds[0]
 
         if left_column < 0:
@@ -121,7 +121,6 @@ class DynamicTiling:
         if top_left == previous_top_left and top_left != (0, 0):
             return None, top_left
 
-
         if(image_dimensions[0] < self.canvas_width and image_dimensions[1] < self.canvas_height):
             first_row = 0
             first_column = 0
@@ -153,7 +152,6 @@ class DynamicTiling:
             npArray = np.array(image_columns[i])
             if (npArray.shape[0] > minColumn):
                 image_columns[i] = npArray[:minColumn]
-
 
         # stitch all the columns to form the image
         img = stitch.join_horizontally(image_columns)
