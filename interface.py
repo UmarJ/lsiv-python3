@@ -1,7 +1,5 @@
 import os
-
-# os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
-
+#os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -38,19 +36,11 @@ class App(tk.Tk):
         self.frame2.config(bg='gray80')
         self.frame2.pack(fill=None, expand=False)
 
-
         self.zoomLabel = tk.Label(self.frame2, text=str(level) + "x", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
         self.zoomLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
         self.fileLabel = tk.Label(self.frame2, text=str("Source:\n" + root.file_name), bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
         self.fileLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
-
-        self.buttonClose = tk.Button(self.frame2, font=("Helvetica", 14), text="Close", bg='gray80', command=on_closing)
-        self.buttonClose.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
-
-
-        self.fileLabel = tk.Label(self.frame2,text=str("Source:\n"+root.file_name),bg='gray90',font=("Helvetica", 14),borderwidth=2, relief="groove")
-        self.fileLabel.pack(side=tk.LEFT,padx=(5,5),pady=(15,15))
 
         self.buttonClose = tk.Button(self.frame2, font=("Helvetica", 14), text="Close", bg='gray80', command=on_closing)
         self.buttonClose.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
@@ -111,7 +101,6 @@ class App(tk.Tk):
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
         self.canvas.pack(expand=tk.YES, fill=tk.BOTH, padx=(100, 100), pady=(0, 10))
-
 
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
@@ -431,9 +420,7 @@ def set_up_folder(dz_generator):
     os.makedirs(folder_path)
 
     level_count = dz_generator.level_count
-
     level_details = []
-
 
     for level in range(level_count):
         width, height = dz_generator.level_dimensions[level]
