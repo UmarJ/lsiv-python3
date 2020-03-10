@@ -1,5 +1,11 @@
 import os
 # os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
+import json
+import dynamic_tiling
+import tracking
+import heatmap_generation
+import sys
+import csv
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -10,12 +16,6 @@ from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 from threading import Thread
 from datetime import datetime
-import json
-import dynamic_tiling
-import tracking
-import heatmap_generation
-import sys
-import csv
 
 
 class App(tk.Tk):
@@ -92,9 +92,6 @@ class App(tk.Tk):
         # top left coordinate of the current selection relative to the svs file
         # (-1, -1) is used as the initial value since it cannot occur naturally
         self.top_left = (-1, -1)
-
-        # draw initial image
-        self.draw_image_on_canvas()
 
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
@@ -255,7 +252,12 @@ class App(tk.Tk):
         self.canvas.scan_dragto(event.x, event.y, gain=1)
         self.draw_image_on_canvas()  # redraw the image
 
-    def draw_image_on_canvas(self):
+    def draw_image_on_canvas(self, force_generation=False):
+        """Draws the image on the canvas.
+
+        Args:
+            force_generation: Is True if the image should be re-generated even if the bounds are same as before.
+        """
 
         self.canvas_vertex = (self.canvas.canvasx(0), self.canvas.canvasy(0))
         box_coords = (self.canvas_vertex[0], self.canvas_vertex[1],
@@ -268,7 +270,7 @@ class App(tk.Tk):
         if box_coords[1] == -1:
             box_coords = (box_coords[0], box_coords[1] + 1, box_coords[2], box_coords[3] + 1)
 
-        image, self.top_left = self.get_image(box_coords)
+        image, self.top_left = self.get_image(box_coords, force_generation=force_generation)
 
         if image is not None:
             self.canvas.delete("all")
@@ -326,7 +328,7 @@ class Recorder(App):
             partial_function = partial(tracking.main, self, resolution)
             Thread(target=partial_function).start()
 
-    def get_image(self, box_coords):
+    def get_image(self, box_coords, force_generation=False):
         image, top_left = self.tile_generator.generate_image(box_coords, self.top_left)
         return image, top_left
 
@@ -335,20 +337,30 @@ class Visualiser(App):
     def __init__(self, root_window, deep_zoom_object, level=0):
         self.tiles_directory = root_window.tiles_directory
         super(Visualiser, self).__init__(root_window, deep_zoom_object, self.tiles_directory, level=level)
+        # The radius of the ellipse drawn to represent the points.
+        self.ellipse_radius = 10
+        self.saved_csv_files = self.load_csv_files(self.tiles_directory, self.tile_generator.max_level)
+        self.canvas.bind('<ButtonPress-1>', self.remove_point)
 
-    def get_image(self, box_coords):
-        image, top_left = self.tile_generator.generate_image(box_coords, self.top_left)
+        # A list containing the csv levels that have been modified.
+        self.modified_files = []
+
+        # Draw initial image.
+        self.draw_image_on_canvas()
+
+    def get_image(self, box_coords, force_generation=False):
+        image, top_left = self.tile_generator.generate_image(box_coords, self.top_left,
+                                                             force_generation=force_generation)
 
         # if image is None, then it's the same as before and no processing needs to be done
         if image is None:
             return image, top_left
 
         else:
-            # the path to the csv, which may or may not exist
-            csv_path = os.path.join(self.tiles_directory, "Level " + str(self.tile_generator.level) + ".csv")
+            current_level = self.tile_generator.level
 
-            # if a csv file is not found, the image is returned without changes
-            if os.path.isfile(csv_path):
+            # if there is no saved csv, the image is returned without changes
+            if current_level in self.saved_csv_files:
                 # points that lie within the current selection
                 relevant_points = []
                 min_x = top_left[0]
@@ -356,26 +368,21 @@ class Visualiser(App):
                 max_x = top_left[0] + image.size[0]
                 max_y = top_left[1] + image.size[1]
 
-                with open(csv_path) as points_file:
-                    points_reader = csv.reader(points_file, delimiter=',')
-                    for x, y in points_reader:
-                        x, y = int(x), int(y)
-                        # if the point is within the range covered by the image
-                        if x > min_x and y > min_y and x < max_x and y < max_y:
-                            # min_x and min_y are subtracted so that the resulting points are coordinates on the image,
-                            # instead of on the whole svs file
-                            relevant_points.append((x - min_x, y - min_y))
+                level_points = self.saved_csv_files[current_level]
+                for x, y in level_points:
+                    # If the point is within the range covered by the image.
+                    if x > min_x and y > min_y and x < max_x and y < max_y:
+                        # min_x and min_y are subtracted so that the resulting points are coordinates on the image,
+                        # instead of on the whole svs file.
+                        relevant_points.append((x - min_x, y - min_y))
 
                 draw = ImageDraw.Draw(image)
                 for x, y in relevant_points:
-                    # the radius of the ellipse
-                    radius = 10
-
                     # top left of the ellipse cannot be less than the size of the image
-                    ellipse_top_left = max(0, x - radius), max(0, y - radius)
+                    ellipse_top_left = max(0, x - self.ellipse_radius), max(0, y - self.ellipse_radius)
 
                     # bottom right of the ellopse cannot exceed the size of the image
-                    ellipse_bottom_right = min(image.size[0], x + radius), min(image.size[1], y + radius)
+                    ellipse_bottom_right = min(image.size[0], x + self.ellipse_radius), min(image.size[1], y + self.ellipse_radius)
 
                     # draw a green ellipse
                     draw.ellipse([ellipse_top_left, ellipse_bottom_right], fill=(0, 255, 0, 255))
@@ -383,6 +390,50 @@ class Visualiser(App):
                 return image, top_left
             else:
                 return image, top_left
+
+    def remove_point(self, event):
+        # move_from needs to be called first, in case the user is just looking around and not removing.
+        self.move_from(event)
+        current_level = self.tile_generator.level
+        level_points = self.saved_csv_files.get(current_level)
+
+        # None is returned if the key does not exist in the dictionary.
+        if level_points is not None:
+            # x and y coordinates of the point on the slide
+            x_on_slide = self.canvas.canvasx(event.x)
+            y_on_slide = self.canvas.canvasy(event.y)
+
+            for x, y in level_points:
+                # Check if the click is within the radius of any gaze point.
+                # TODO: Look for closes point if there are multiple points in range.
+                if abs(x_on_slide - x) <= self.ellipse_radius and abs(y_on_slide - y) <= self.ellipse_radius:
+                    level_points.remove((x, y))
+                    self.draw_image_on_canvas(force_generation=True)
+
+                    # If the current level has not been modified before, add it to the list of modified levels.
+                    if current_level not in self.modified_files:
+                        self.modified_files.append(current_level)
+                    break
+
+    def load_csv_files(self, directory, levels):
+        csv_files = {}
+        for level in range(levels):
+            # list containing this level's points
+            level_points = []
+
+            # The path to the csv, which may or may not exist.
+            csv_path = os.path.join(self.tiles_directory, "Level " + str(level) + ".csv")
+
+            # Open the file if it exists and load the points to an array.
+            if os.path.isfile(csv_path):
+                with open(csv_path) as points_file:
+                    for x, y in csv.reader(points_file, delimiter=','):
+                        level_points.append((int(x), int(y)))
+
+                # Add the points to the dictionary.
+                csv_files[level] = level_points
+
+        return csv_files
 
 
 class ResizingFrame(tk.Frame):

@@ -61,7 +61,7 @@ class DynamicTiling:
 
         return images_width, images_height
 
-    def generate_image(self, image_bounds, previous_top_left):
+    def generate_image(self, image_bounds, previous_top_left, force_generation=False):
 
         image_dimensions = self.get_dim()
 
@@ -120,7 +120,8 @@ class DynamicTiling:
 
         # None is returned if the top left coordinate has not change,
         # since the image will be the same and it does not need to be processed again
-        if top_left == previous_top_left and top_left != (0, 0):
+        # This condition is ignored if force_genration is True.
+        if top_left == previous_top_left and top_left != (0, 0) and not force_generation:
             return None, top_left
 
         if(image_dimensions[0] < self.canvas_width and image_dimensions[1] < self.canvas_height):
@@ -197,7 +198,7 @@ class DynamicTiling:
             # set the path to the new path
             self.level_path = new_path
             self.images_width, self.images_height = self.get_file_details()
-
+    
 
 # helper function to split a list into parts
 def split_list(input_list, parts):
