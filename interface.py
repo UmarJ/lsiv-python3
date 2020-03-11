@@ -294,7 +294,8 @@ class App(tk.Tk):
 class Recorder(App):
     def __init__(self, root_window, deep_zoom_object, level=0):
         tiles_folder = set_up_folder(deep_zoom_object)
-        super(Recorder, self).__init__(root_window, deep_zoom_object, tiles_folder, level=level)
+        # Python 2.x compatible constructor
+        App.__init__(self, root_window, deep_zoom_object, tiles_folder, level=level)
 
         assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
@@ -338,7 +339,8 @@ class Recorder(App):
 class Visualiser(App):
     def __init__(self, root_window, deep_zoom_object, level=0):
         self.tiles_directory = root_window.tiles_directory
-        super(Visualiser, self).__init__(root_window, deep_zoom_object, self.tiles_directory, level=level)
+        # Python 2.x compatible constructor
+        App.__init__(self, root_window, deep_zoom_object, self.tiles_directory, level=level)
         # The radius of the ellipse drawn to represent the points.
         self.ellipse_radius = 10
         self.saved_csv_files = self.load_csv_files(self.tiles_directory, self.tile_generator.max_level)
