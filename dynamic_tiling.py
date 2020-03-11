@@ -21,7 +21,7 @@ class DynamicTiling:
         self.level_path = os.path.join(self.tiles_folder_path, str(level))
         self.tiles_generated = {}
 
-        os.makedirs(self.level_path)
+        os.makedirs(self.level_path, exist_ok=True)
 
     def get_dim(self):
         return self.deep_zoom.level_dimensions[self.level]
@@ -61,7 +61,7 @@ class DynamicTiling:
 
         return images_width, images_height
 
-    def generate_image(self, image_bounds, previous_top_left):
+    def generate_image(self, image_bounds, previous_top_left, force_generation=False):
 
         image_dimensions = self.get_dim()
 
@@ -118,7 +118,10 @@ class DynamicTiling:
         if first_row != 0:
             top_left = (top_left[0], self.first_row_height + (first_row - 1) * self.row_height)
 
-        if top_left == previous_top_left and top_left != (0, 0):
+        # None is returned if the top left coordinate has not change,
+        # since the image will be the same and it does not need to be processed again
+        # This condition is ignored if force_genration is True.
+        if top_left == previous_top_left and top_left != (0, 0) and not force_generation:
             return None, top_left
 
         if(image_dimensions[0] < self.canvas_width and image_dimensions[1] < self.canvas_height):
@@ -190,13 +193,12 @@ class DynamicTiling:
 
             new_path = os.path.join(self.tiles_folder_path, str(new_level))
 
-            if not os.path.isdir(new_path):
-                os.mkdir(new_path)
+            os.makedirs(new_path, exist_ok=True)
 
             # set the path to the new path
             self.level_path = new_path
             self.images_width, self.images_height = self.get_file_details()
-
+    
 
 # helper function to split a list into parts
 def split_list(input_list, parts):

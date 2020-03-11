@@ -1,19 +1,23 @@
 import os
-#os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
+
+# os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
+import json
+import dynamic_tiling
+import tracking
+import heatmap_generation
+import sys
+import csv
+
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from tkinter import messagebox
-from PIL import ImageTk
+from PIL import ImageTk, ImageDraw
 from functools import partial
 from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 from threading import Thread
 from datetime import datetime
-import json
-import dynamic_tiling
-import tracking
-import heatmap_generation
 
 
 class App(tk.Tk):
@@ -26,7 +30,7 @@ class App(tk.Tk):
 
         # x coordinate at top-left, y coordinate at top-left,
         # x coordinate at bottom-right, y coordinate at bottom-right
-        self.box_coords = (0, 0, 0, 0)
+        box_coords = (0, 0, 0, 0)
 
         self.root_window.title("Large Scale Image Viewer")
         self.root_window.attributes("-fullscreen", True)
@@ -76,8 +80,6 @@ class App(tk.Tk):
 
         self.canvas.focus_set()
         self.canvas.bind("b", self.bounding_box)
-        self.canvas.bind("t", self.start_stop_tracking)
-        self.canvas.bind("h", self.generate_heatmap)
 
         self.start_x = None
         self.start_y = None
@@ -89,14 +91,9 @@ class App(tk.Tk):
         self.tile_generator = dynamic_tiling.DynamicTiling(
             deep_zoom_object, level, self.canvas.winfo_reqwidth(), self.canvas.winfo_reqheight(), tiles_folder)
 
-        # generate initial image for starting coordinates
-        image, self.top_left = self.tile_generator.generate_image(
-            (0, 0, 800, 600), (-1, -1))
-        self.image = ImageTk.PhotoImage(image=image)
-
-        # set the image on the canvas
-        self.image_on_canvas = self.canvas.create_image(
-            self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
+        # top left coordinate of the current selection relative to the svs file
+        # (-1, -1) is used as the initial value since it cannot occur naturally
+        self.top_left = (-1, -1)
 
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
@@ -170,12 +167,12 @@ class App(tk.Tk):
     def __scroll_x(self, *args):
         # scroll canvas horizontally and redraw the image
         self.canvas.xview(*args)
-        self.get_data()
+        self.draw_image_on_canvas()
 
     def __scroll_y(self, *args):
         # scroll canvas horizontally and redraw the image
         self.canvas.yview(*args)
-        self.get_data()
+        self.draw_image_on_canvas()
 
     def zoom(self, event, change):
         # get coordinates of the event on the canvas
@@ -203,17 +200,19 @@ class App(tk.Tk):
         canvas_top_left = (max(0, centre_x - (self.frame.width // 2)),
                            max(0, centre_y - (self.frame.height // 2)))
 
-        self.box_coords = (canvas_top_left[0], canvas_top_left[1],
-                           canvas_top_left[0] + self.frame.width, canvas_top_left[1] + self.frame.height)
+        box_coords = (canvas_top_left[0], canvas_top_left[1],
+                      canvas_top_left[0] + self.frame.width, canvas_top_left[1] + self.frame.height)
 
-        # get the new image using the new coordinates
-        image, self.top_left = self.tile_generator.generate_image(
-            self.box_coords, (-1, -1))
+        # reset the top left
+        self.top_left = (-1, -1)
+
+        # the draw_image_on_canvas function cannot be used since this needs to scroll the canvas too
+        image, self.top_left = self.get_image(box_coords)
 
         self.image = ImageTk.PhotoImage(image=image)
 
         # delete the old image and set the new image
-        self.canvas.delete(self.image_on_canvas)
+        self.canvas.delete("all")
         self.image_on_canvas = self.canvas.create_image(
             canvas_top_left[0], canvas_top_left[1], image=self.image, anchor="nw")
 
@@ -227,7 +226,7 @@ class App(tk.Tk):
         self.canvas.xview_moveto(scrollbar_x)
         self.canvas.yview_moveto(scrollbar_y)
 
-        self.get_data()
+        self.draw_image_on_canvas()
 
     # zoom for MacOS and Windows
     def __wheel(self, event):
@@ -253,33 +252,40 @@ class App(tk.Tk):
     def move_to(self, event):
         # drag (move) canvas to the new position
         self.canvas.scan_dragto(event.x, event.y, gain=1)
-        self.get_data()  # redraw the image
+        self.draw_image_on_canvas()  # redraw the image
 
-    def get_data(self):
+    def draw_image_on_canvas(self, force_generation=False):
+        """Draws the image on the canvas.
+
+        Args:
+            force_generation: Is True if the image should be re-generated even if the bounds are same as before.
+        """
 
         self.canvas_vertex = (self.canvas.canvasx(0), self.canvas.canvasy(0))
-        self.box_coords = (self.canvas_vertex[0], self.canvas_vertex[1],
-                           self.canvas_vertex[0] + self.canvas.winfo_reqwidth(), self.canvas_vertex[1] + self.canvas.winfo_reqheight())
+        box_coords = (self.canvas_vertex[0], self.canvas_vertex[1],
+                      self.canvas_vertex[0] + self.frame.width, self.canvas_vertex[1] + self.frame.height)
 
-        print(self.box_coords)
+        # some weird bug with canvas being 0 when scrolling back to origin
+        if box_coords[0] == -1:
+            box_coords = (box_coords[0] + 1, box_coords[1], box_coords[2] + 1, box_coords[3])
 
-        # some weird bug with canvas being -1 when scrolling back to origin
-        if self.box_coords[0] == -1:
-            self.box_coords = (
-                self.box_coords[0] + 1, self.box_coords[1], self.box_coords[2] + 1, self.box_coords[3])
+        if box_coords[1] == -1:
+            box_coords = (box_coords[0], box_coords[1] + 1, box_coords[2], box_coords[3] + 1)
 
-        if self.box_coords[1] == -1:
-            self.box_coords = (
-                self.box_coords[0], self.box_coords[1] + 1, self.box_coords[2], self.box_coords[3] + 1)
+        image, self.top_left = self.get_image(box_coords, force_generation=force_generation)
 
-        image, top_left = self.tile_generator.generate_image(
-            self.box_coords, self.top_left)
         if image is not None:
-            self.canvas.delete(self.image_on_canvas)
+            self.canvas.delete("all")
+
+            # this ownership is necessary, or the image does not show up on the canvas
             self.image = ImageTk.PhotoImage(image=image)
 
             self.image_on_canvas = self.canvas.create_image(
-                top_left[0], top_left[1], image=self.image, anchor="nw")
+                self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
+
+    # virtual method
+    def get_image(self, box_coords):
+        raise NotImplementedError()
 
     def generate_heatmap(self, event):
         heatmap_generation.generate_heatmap(self.deep_zoom_object, self.tile_generator.folder_path)
@@ -302,6 +308,9 @@ class Recorder(App):
         self.gazeToggleButton = tk.Button(self.frame2, fg="red", text="hello", bg='gray80', image=self.imgEyeOff, command=self.start_stop_tracking)
         self.gazeToggleButton.pack(side=tk.LEFT, padx=(15, 15), pady=(15, 15))
 
+        self.canvas.bind("t", self.start_stop_tracking)
+        self.canvas.bind("h", self.generate_heatmap)
+
         # shows whether the gaze tracker is currently tracking
         self.is_tracking = False
 
@@ -321,11 +330,112 @@ class Recorder(App):
             partial_function = partial(tracking.main, self, resolution)
             Thread(target=partial_function).start()
 
+    def get_image(self, box_coords, force_generation=False):
+        image, top_left = self.tile_generator.generate_image(box_coords, self.top_left)
+        return image, top_left
+
 
 class Visualiser(App):
     def __init__(self, root_window, deep_zoom_object, level=0):
-        tiles_folder = set_up_folder(deep_zoom_object)
-        super(Visualiser, self).__init__(root_window, deep_zoom_object, tiles_folder, level=level)
+        self.tiles_directory = root_window.tiles_directory
+        super(Visualiser, self).__init__(root_window, deep_zoom_object, self.tiles_directory, level=level)
+        # The radius of the ellipse drawn to represent the points.
+        self.ellipse_radius = 10
+        self.saved_csv_files = self.load_csv_files(self.tiles_directory, self.tile_generator.max_level)
+        self.canvas.bind('<ButtonPress-1>', self.remove_point)
+
+        # A list containing the csv levels that have been modified.
+        self.modified_files = []
+
+        # Draw initial image.
+        self.draw_image_on_canvas()
+
+    def get_image(self, box_coords, force_generation=False):
+        image, top_left = self.tile_generator.generate_image(box_coords, self.top_left,
+                                                             force_generation=force_generation)
+
+        # if image is None, then it's the same as before and no processing needs to be done
+        if image is None:
+            return image, top_left
+
+        else:
+            current_level = self.tile_generator.level
+
+            # if there is no saved csv, the image is returned without changes
+            if current_level in self.saved_csv_files:
+                # points that lie within the current selection
+                relevant_points = []
+                min_x = top_left[0]
+                min_y = top_left[1]
+                max_x = top_left[0] + image.size[0]
+                max_y = top_left[1] + image.size[1]
+
+                level_points = self.saved_csv_files[current_level]
+                for x, y in level_points:
+                    # If the point is within the range covered by the image.
+                    if x > min_x and y > min_y and x < max_x and y < max_y:
+                        # min_x and min_y are subtracted so that the resulting points are coordinates on the image,
+                        # instead of on the whole svs file.
+                        relevant_points.append((x - min_x, y - min_y))
+
+                draw = ImageDraw.Draw(image)
+                for x, y in relevant_points:
+                    # top left of the ellipse cannot be less than the size of the image
+                    ellipse_top_left = max(0, x - self.ellipse_radius), max(0, y - self.ellipse_radius)
+
+                    # bottom right of the ellopse cannot exceed the size of the image
+                    ellipse_bottom_right = min(image.size[0], x + self.ellipse_radius), min(image.size[1], y + self.ellipse_radius)
+
+                    # draw a green ellipse
+                    draw.ellipse([ellipse_top_left, ellipse_bottom_right], fill=(0, 255, 0, 255))
+
+                return image, top_left
+            else:
+                return image, top_left
+
+    def remove_point(self, event):
+        # move_from needs to be called first, in case the user is just looking around and not removing.
+        self.move_from(event)
+        current_level = self.tile_generator.level
+        level_points = self.saved_csv_files.get(current_level)
+
+        # None is returned if the key does not exist in the dictionary.
+        if level_points is not None:
+            # x and y coordinates of the point on the slide
+            x_on_slide = self.canvas.canvasx(event.x)
+            y_on_slide = self.canvas.canvasy(event.y)
+
+            for x, y in level_points:
+                # Check if the click is within the radius of any gaze point.
+                # TODO: Look for closes point if there are multiple points in range.
+                if abs(x_on_slide - x) <= self.ellipse_radius and abs(y_on_slide - y) <= self.ellipse_radius:
+                    level_points.remove((x, y))
+                    self.draw_image_on_canvas(force_generation=True)
+
+                    # If the current level has not been modified before, add it to the list of modified levels.
+                    if current_level not in self.modified_files:
+                        self.modified_files.append(current_level)
+                    break
+
+    def load_csv_files(self, directory, levels):
+        csv_files = {}
+        for level in range(levels):
+            # list containing this level's points
+            level_points = []
+
+            # The path to the csv, which may or may not exist.
+            csv_path = os.path.join(self.tiles_directory, "Level " + str(level) + ".csv")
+
+            # Open the file if it exists and load the points to an array.
+            if os.path.isfile(csv_path):
+                with open(csv_path) as points_file:
+                    for x, y in csv.reader(points_file, delimiter=','):
+                        level_points.append((int(x), int(y)))
+
+                # Add the points to the dictionary.
+                csv_files[level] = level_points
+
+        return csv_files
 
 
 class ResizingFrame(tk.Frame):
@@ -350,7 +460,7 @@ class ResizingFrame(tk.Frame):
         # when the frame is resized, change the dimensions in the app and re-generate the image
         self.app.tile_generator.frame_width = self.width
         self.app.tile_generator.frame_height = self.height
-        self.app.get_data()
+        self.app.draw_image_on_canvas()
 
 
 class FileSelection:
@@ -367,6 +477,11 @@ class FileSelection:
 
         self.frame.pack(padx=50, pady=50)
 
+        if len(sys.argv) >= 2:
+            root.tiles_directory = sys.argv[1]
+        else:
+            root.tiles_directory = None
+
     def file_selection(self, event):
         # open the file selection menu and get the file path
         root.file_path = filedialog.askopenfilename()
@@ -376,8 +491,6 @@ class FileSelection:
         print("root.file_path: {}".format(root.file_path))
 
         self.frame.pack_forget()
-        # self.newWindow = tk.Toplevel(self.master)
-        # self.app = LevelSelection(self.newWindow)
         self.app = LevelSelection(self.master)
 
 
@@ -404,8 +517,12 @@ class LevelSelection:
 
         def on_button_press(event):
             frame.pack_forget()
-            Recorder(root, deep_zoom_object=dz_generator,
-                     level=int(selection.get()))
+
+            # if tiles_dirctory is provided in args, the visualiser tool is run
+            if root.tiles_directory is None:
+                Recorder(root, deep_zoom_object=dz_generator, level=int(selection.get()))
+            else:
+                Visualiser(root, deep_zoom_object=dz_generator, level=int(selection.get()))
 
         confirm.bind('<Button-1>', on_button_press)
 
