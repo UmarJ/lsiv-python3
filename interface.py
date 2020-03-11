@@ -1,4 +1,5 @@
 import os
+
 # os.add_dll_directory(r'D:\openslide-win32-20171122\bin')
 import json
 import dynamic_tiling
@@ -6,6 +7,7 @@ import tracking
 import heatmap_generation
 import sys
 import csv
+
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
