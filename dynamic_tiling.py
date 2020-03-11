@@ -84,7 +84,8 @@ class DynamicTiling:
         # the 1 is added because of the first column
         # the ceil function ensures the last column with width < column_width is included
         # the 2 is added because i dunno why it leaves empty space otherwise :/
-        last_column = ceil((right_column - self.first_column_width) / self.column_width) + 1 + 2
+        # Ceil returns a float in Python 2.x, which needs to be converted.
+        last_column = int(ceil((right_column - self.first_column_width) / self.column_width)) + 1 + 2
         if last_column >= self.columns:
             last_column = self.columns - 1
 
@@ -106,7 +107,8 @@ class DynamicTiling:
 
         # the 1 is added because of the first row
         # the ceil function ensures the last row with height < row_height is included
-        last_row = ceil((bottom_row - self.first_row_height) / self.row_height) + 1
+        # Ceil returns a float in Python 2.x, which needs to be converted.
+        last_row = int(ceil((bottom_row - self.first_row_height) / self.row_height)) + 1
         if last_row >= self.rows:
             last_row = self.rows - 1
 
