@@ -21,7 +21,9 @@ class DynamicTiling:
         self.level_path = os.path.join(self.tiles_folder_path, str(level))
         self.tiles_generated = {}
 
-        os.makedirs(self.level_path, exist_ok=True)
+        # Create the directory if it does not exist.
+        if not os.path.isdir(self.level_path):
+            os.makedirs(self.level_path)
 
     def get_dim(self):
         return self.deep_zoom.level_dimensions[self.level]
@@ -195,12 +197,14 @@ class DynamicTiling:
 
             new_path = os.path.join(self.tiles_folder_path, str(new_level))
 
-            os.makedirs(new_path, exist_ok=True)
+            # Create the directory if it does not exist.
+            if not os.path.isdir(new_path):
+                os.makedirs(new_path)
 
             # set the path to the new path
             self.level_path = new_path
             self.images_width, self.images_height = self.get_file_details()
-    
+
 
 # helper function to split a list into parts
 def split_list(input_list, parts):
