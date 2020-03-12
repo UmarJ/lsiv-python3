@@ -21,7 +21,9 @@ class DynamicTiling:
         self.level_path = os.path.join(self.tiles_folder_path, str(level))
         self.tiles_generated = {}
 
-        os.makedirs(self.level_path, exist_ok=True)
+        # Create the directory if it does not exist.
+        if not os.path.isdir(self.level_path):
+            os.makedirs(self.level_path)
 
     def get_dim(self):
         return self.deep_zoom.level_dimensions[self.level]
@@ -84,7 +86,8 @@ class DynamicTiling:
         # the 1 is added because of the first column
         # the ceil function ensures the last column with width < column_width is included
         # the 2 is added because i dunno why it leaves empty space otherwise :/
-        last_column = ceil((right_column - self.first_column_width) / self.column_width) + 1 + 2
+        # Ceil returns a float in Python 2.x, which needs to be converted.
+        last_column = int(ceil((right_column - self.first_column_width) / self.column_width)) + 1 + 2
         if last_column >= self.columns:
             last_column = self.columns - 1
 
@@ -106,7 +109,8 @@ class DynamicTiling:
 
         # the 1 is added because of the first row
         # the ceil function ensures the last row with height < row_height is included
-        last_row = ceil((bottom_row - self.first_row_height) / self.row_height) + 1
+        # Ceil returns a float in Python 2.x, which needs to be converted.
+        last_row = int(ceil((bottom_row - self.first_row_height) / self.row_height)) + 1
         if last_row >= self.rows:
             last_row = self.rows - 1
 
@@ -193,12 +197,14 @@ class DynamicTiling:
 
             new_path = os.path.join(self.tiles_folder_path, str(new_level))
 
-            os.makedirs(new_path, exist_ok=True)
+            # Create the directory if it does not exist.
+            if not os.path.isdir(new_path):
+                os.makedirs(new_path)
 
             # set the path to the new path
             self.level_path = new_path
             self.images_width, self.images_height = self.get_file_details()
-    
+
 
 # helper function to split a list into parts
 def split_list(input_list, parts):
