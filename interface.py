@@ -28,7 +28,7 @@ class App(tk.Tk):
 
         # x coordinate at top-left, y coordinate at top-left,
         # x coordinate at bottom-right, y coordinate at bottom-right
-        box_coords = (0, 0, 0, 0)
+        self.box_coords = (0, 0, 0, 0)
 
         self.root_window.title("Large Scale Image Viewer")
         self.root_window.attributes("-fullscreen", True)
@@ -198,14 +198,14 @@ class App(tk.Tk):
         canvas_top_left = (max(0, centre_x - (self.frame.width // 2)),
                            max(0, centre_y - (self.frame.height // 2)))
 
-        box_coords = (canvas_top_left[0], canvas_top_left[1],
+        self.box_coords = (canvas_top_left[0], canvas_top_left[1],
                       canvas_top_left[0] + self.frame.width, canvas_top_left[1] + self.frame.height)
 
         # reset the top left
         self.top_left = (-1, -1)
 
         # the draw_image_on_canvas function cannot be used since this needs to scroll the canvas too
-        image, self.top_left = self.get_image(box_coords)
+        image, self.top_left = self.get_image(self.box_coords)
 
         self.image = ImageTk.PhotoImage(image=image)
 
@@ -269,6 +269,8 @@ class App(tk.Tk):
 
         if box_coords[1] == -1:
             box_coords = (box_coords[0], box_coords[1] + 1, box_coords[2], box_coords[3] + 1)
+        
+        self.box_coords = box_coords
 
         image, self.top_left = self.get_image(box_coords, force_generation=force_generation)
 
