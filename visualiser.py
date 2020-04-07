@@ -1,7 +1,9 @@
 from app import App
 import os
 import csv
+import tkinter as tk
 from PIL import ImageDraw
+from tkinter import simpledialog
 
 
 class Visualiser(App):
@@ -9,9 +11,14 @@ class Visualiser(App):
         self.tiles_directory = root_window.tiles_directory
         # Python 2.x compatible constructor
         App.__init__(self, root_window, deep_zoom_object, self.tiles_directory, level=level)
+
+        # When pressed, prompts for new file names of modified CSVs, and saves them.
+        save_csv_button = tk.Button(self.frame2, text='Save', command=self.save_modified)
+        save_csv_button.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+
         # The radius of the ellipse drawn to represent the points.
         self.ellipse_radius = 10
-        self.saved_csv_files = self.load_csv_files(self.tiles_directory, self.tile_generator.max_level)
+        self.saved_points = self.load_csv_files(self.tiles_directory, self.tile_generator.max_level)
         self.canvas.bind('<ButtonPress-1>', self.remove_point)
 
         # A list containing the csv levels that have been modified.
@@ -32,7 +39,7 @@ class Visualiser(App):
             current_level = self.tile_generator.level
 
             # if there is no saved csv, the image is returned without changes
-            if current_level in self.saved_csv_files:
+            if current_level in self.saved_points:
                 # points that lie within the current selection
                 relevant_points = []
                 min_x = top_left[0]
@@ -40,7 +47,7 @@ class Visualiser(App):
                 max_x = top_left[0] + image.size[0]
                 max_y = top_left[1] + image.size[1]
 
-                level_points = self.saved_csv_files[current_level]
+                level_points = self.saved_points[current_level]
                 for x, y in level_points:
                     # If the point is within the range covered by the image.
                     if x > min_x and y > min_y and x < max_x and y < max_y:
@@ -67,7 +74,7 @@ class Visualiser(App):
         # move_from needs to be called first, in case the user is just looking around and not removing.
         self.move_from(event)
         current_level = self.tile_generator.level
-        level_points = self.saved_csv_files.get(current_level)
+        level_points = self.saved_points.get(current_level)
 
         # None is returned if the key does not exist in the dictionary.
         if level_points is not None:
@@ -106,3 +113,33 @@ class Visualiser(App):
                 csv_files[level] = level_points
 
         return csv_files
+
+    def get_names_for_modified(self, modified_levels):
+
+        file_names = {}
+
+        for level in modified_levels:
+            new_name = simpledialog.askstring("Enter Name", "Enter new name for CSV for Level {}. "
+                                                            "Leave empty to overwrite saved file.".format(level))
+
+            # If the string is empty, overwrite the saved csv file.
+            if not new_name:
+                new_name = "Level " + str(level)
+            file_names[level] = new_name
+
+        return file_names
+
+    def save_modified(self):
+
+        # If array is not empty.
+        if self.modified_files:
+            file_names = self.get_names_for_modified(self.modified_files)
+
+            for level, new_name in file_names.items():
+                # The path to the save location of the csv
+                csv_path = os.path.join(self.tiles_directory, new_name + ".csv")
+                with open(csv_path, 'w+') as csv_file:
+                    writer = csv.writer(csv_file, delimiter=',')
+                    writer.writerows(self.saved_points.get(level))
+
+            self.modified_files = []
