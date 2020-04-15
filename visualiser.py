@@ -12,6 +12,13 @@ class Visualiser(App):
         # Python 2.x compatible constructor
         App.__init__(self, root_window, deep_zoom_object, self.tiles_directory, level=level)
 
+
+        # When pressed, toggles the bounding box point removal tool.
+        self.toggle_bounding_box_button = tk.Button(self.frame2, text="Bounding\n Box", command=self.toggle_bounding_box_mode)
+        self.toggle_bounding_box_button.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+        self.button_original_bg = self.toggle_bounding_box_button.cget("background")
+
+
         # When pressed, prompts for new file names of modified CSVs, and saves them.
         save_csv_button = tk.Button(self.frame2, text='Save', command=self.save_modified)
         save_csv_button.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
@@ -19,7 +26,15 @@ class Visualiser(App):
         # The radius of the ellipse drawn to represent the points.
         self.ellipse_radius = 10
         self.saved_points = self.load_csv_files(self.tiles_directory, self.tile_generator.max_level)
+
+        # Bind left mouse click to removing a point.
         self.canvas.bind('<ButtonPress-1>', self.remove_point)
+
+        # Bind b key to toggling bounding box point removal tool.
+        self.canvas.bind('b', self.toggle_bounding_box_mode)
+
+        # Whether the bounding box mode is currently activated.
+        self.bb_mode = False
 
         # A list containing the csv levels that have been modified.
         self.modified_files = []
@@ -74,9 +89,10 @@ class Visualiser(App):
         # move_from needs to be called first, in case the user is just looking around and not removing.
         self.move_from(event)
         current_level = self.tile_generator.level
-        level_points = self.saved_points.get(current_level)
 
         # None is returned if the key does not exist in the dictionary.
+        level_points = self.saved_points.get(current_level)
+
         if level_points is not None:
             # x and y coordinates of the point on the slide
             x_on_slide = self.canvas.canvasx(event.x)
@@ -84,7 +100,7 @@ class Visualiser(App):
 
             for x, y in level_points:
                 # Check if the click is within the radius of any gaze point.
-                # TODO: Look for closes point if there are multiple points in range.
+                # TODO: Look for closest point if there are multiple points in range.
                 if abs(x_on_slide - x) <= self.ellipse_radius and abs(y_on_slide - y) <= self.ellipse_radius:
                     level_points.remove((x, y))
                     self.draw_image_on_canvas(force_generation=True)
@@ -143,3 +159,111 @@ class Visualiser(App):
                     writer.writerows(self.saved_points.get(level))
 
             self.modified_files = []
+
+    # event=None is needed because binding to a button does not generate an event
+    def toggle_bounding_box_mode(self, event=None):
+        # Resets the bindings to normal if bounding box mode was active before.
+        if self.bb_mode:
+            # Sets the anchor which can be used to move the canvas if the mouse is dragged.
+            self.canvas.bind("<ButtonPress-1>", self.move_from)
+            # Move canvas to the new position using the anchor.
+            self.canvas.bind("<B1-Motion>", self.move_to)
+            self.canvas.unbind("<ButtonRelease-1>")
+            self.toggle_bounding_box_button.config(bg=self.button_original_bg)
+            self.bb_mode = False
+        else:
+            self.activate_bb_mode()
+            self.toggle_bounding_box_button.config(bg='gray60')
+            self.bb_mode = True
+
+    # The visualiser goes into "bounding box mode", where bounding boxes can be drawn to remove points.
+    # event=None is needed because binding to a button does not generate an event
+    def activate_bb_mode(self):
+        self.canvas.bind("<ButtonPress-1>", self.bb_left_mouse_press)
+        self.canvas.bind("<B1-Motion>", self.bb_mouse_motion)
+        self.canvas.bind("<ButtonRelease-1>", self.bb_mouse_release)
+
+    def bb_left_mouse_press(self, event):
+        # x and y coordinates of the point on the slide.
+        self.bb_start_x = self.canvas.canvasx(event.x)
+        self.bb_start_y = self.canvas.canvasy(event.y)
+
+        # Create the rectangle for the bounding box.
+        self.bb_rectangle = self.canvas.create_rectangle(self.bb_start_x, self.bb_start_y, self.bb_start_x,
+                                                         self.bb_start_y, fill='', outline="green")
+
+    def bb_mouse_motion(self, event):
+        # x and y coordinates of the current position of the mouse on the slide.
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
+
+        # Change the dimensions of the bounding box rectangle.
+        self.canvas.coords(self.bb_rectangle, self.bb_start_x, self.bb_start_y, x, y)
+
+    def bb_mouse_release(self, event):
+        # x and y coordinates of the position where the mouse was released on the slide.
+        final_x = self.canvas.canvasx(event.x)
+        final_y = self.canvas.canvasx(event.y)
+
+        # Boolean that represnts if points were removed.
+        point_removed = self.remove_points_between_bounds(self.bb_start_x, self.bb_start_y, final_x, final_y)
+
+        # If points were removed, we need to redraw the image since there are now less points.
+        if point_removed:
+            self.draw_image_on_canvas(force_generation=True)
+
+        # If no points were removed, we only need to delete the rectangle.
+        else:
+            self.canvas.delete(self.bb_rectangle)
+
+    def remove_points_between_bounds(self, x1, y1, x2, y2):
+
+        # Whether any point has been removed or not.
+        point_removed = False
+
+        points_to_remove = []
+
+        # Change the current representation into top-left coordinates and bottom-right coordinates.
+
+        # This function could probably be made neater.
+
+        # The lesser of the two is the x-coordinate of the top left pixel.
+        if x1 < x2:
+            top_left_x = x1
+        else:
+            top_left_x = x2 
+
+        bottom_right_x = top_left_x + abs(x2 - x1)
+
+
+        # The lesser of the two is the y-coordinate of the top left pixel.
+        if y1 < y2:
+            top_left_y = y1
+        else:
+            top_left_y = y2
+
+        bottom_right_y = top_left_y + abs(y2 - y1)
+
+        current_level = self.tile_generator.level
+
+        # None is returned if the key does not exist in the dictionary.
+        level_points = self.saved_points.get(current_level)
+
+        if level_points is not None:
+            for x, y in level_points:
+                # Check if the current point is within the range of the bounding box.
+                # A separate list is used since iteration is messed up if removing while iterating.
+                if x >= top_left_x and x <= bottom_right_x and y >= top_left_y and y <= bottom_right_y:
+                    points_to_remove.append((x, y))
+                    point_removed = True
+
+                    # If the current level has not been modified before, add it to the list of modified levels.
+                    if current_level not in self.modified_files:
+                        self.modified_files.append(current_level)
+
+        # If points were removed, then remove them from the list using a comprehension.
+        # A better solution could be found.
+        if point_removed:
+            level_points[:] = [point for point in level_points if point not in points_to_remove]
+
+        return point_removed
