@@ -162,8 +162,8 @@ class Visualiser(App):
     def toggle_bounding_box_mode(self, event=None):
         # Resets the bindings to normal if bounding box mode was active before.
         if self.bb_mode:
-            # Sets the anchor which can be used to move the canvas if the mouse is dragged.
-            self.canvas.bind("<ButtonPress-1>", self.move_from)
+            # Bind left mouse click to removing a point.
+            self.canvas.bind("<ButtonPress-1>", self.remove_point)
             # Move canvas to the new position using the anchor.
             self.canvas.bind("<B1-Motion>", self.move_to)
             self.canvas.unbind("<ButtonRelease-1>")
