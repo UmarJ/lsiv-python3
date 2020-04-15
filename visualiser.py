@@ -17,6 +17,10 @@ class Visualiser(App):
         self.toggle_bounding_box_button.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
         self.button_original_bg = self.toggle_bounding_box_button.cget("background")
 
+        # When pressed, undoes the most recent deletion.
+        self.undo_button = tk.Button(self.frame2, text="Undo", command=self.undo)
+        self.undo_button.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+
         # When pressed, prompts for new file names of modified CSVs, and saves them.
         save_csv_button = tk.Button(self.frame2, text='Save', command=self.save_modified)
         save_csv_button.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
@@ -36,6 +40,14 @@ class Visualiser(App):
 
         # A list containing the csv levels that have been modified.
         self.modified_files = []
+
+        # A dictionary where the key is the level and the value is an "undo stack".
+        # An undo stack is a list of lists, where each list contains points that were deleted in that step.
+        self.undo_stacks = {}
+
+        # Initialize undo stacks to empty lists.
+        for level in range(self.tile_generator.max_level):
+            self.undo_stacks[level] = []
 
         # Draw initial image.
         self.draw_image_on_canvas()
@@ -101,6 +113,7 @@ class Visualiser(App):
                 # TODO: Look for closest point if there are multiple points in range.
                 if abs(x_on_slide - x) <= self.ellipse_radius and abs(y_on_slide - y) <= self.ellipse_radius:
                     level_points.remove((x, y))
+                    self.push_points([(x, y)])
                     self.draw_image_on_canvas(force_generation=True)
 
                     # If the current level has not been modified before, add it to the list of modified levels.
@@ -203,11 +216,12 @@ class Visualiser(App):
         final_x = self.canvas.canvasx(event.x)
         final_y = self.canvas.canvasy(event.y)
 
-        # Boolean that represnts if points were removed.
-        point_removed = self.remove_points_between_bounds(self.bb_start_x, self.bb_start_y, final_x, final_y)
+        # List of points that have been removed.
+        points_removed = self.remove_points_between_bounds(self.bb_start_x, self.bb_start_y, final_x, final_y)
 
         # If points were removed, we need to redraw the image since there are now less points.
-        if point_removed:
+        if points_removed:
+            self.push_points(points_removed)
             self.draw_image_on_canvas(force_generation=True)
 
         # If no points were removed, we only need to delete the rectangle.
@@ -216,9 +230,7 @@ class Visualiser(App):
 
     def remove_points_between_bounds(self, x1, y1, x2, y2):
 
-        # Whether any point has been removed or not.
-        point_removed = False
-
+        # List of points that have to be removed.
         points_to_remove = []
 
         # Change the current representation into top-left coordinates and bottom-right coordinates.
@@ -252,7 +264,6 @@ class Visualiser(App):
                 # A separate list is used since iteration is messed up if removing while iterating.
                 if x >= top_left_x and x <= bottom_right_x and y >= top_left_y and y <= bottom_right_y:
                     points_to_remove.append((x, y))
-                    point_removed = True
 
                     # If the current level has not been modified before, add it to the list of modified levels.
                     if current_level not in self.modified_files:
@@ -260,7 +271,42 @@ class Visualiser(App):
 
         # If points were removed, then remove them from the list using a comprehension.
         # A better solution could be found.
-        if point_removed:
+        if points_to_remove:
             level_points[:] = [point for point in level_points if point not in points_to_remove]
 
-        return point_removed
+        return points_to_remove
+
+    def push_points(self, points):
+        """Pushes points onto the current level's undo stack.
+
+        Args:
+            points: A list of points, where each point is an x, y coordinate pair.
+        """
+        current_level_stack = self.undo_stacks[self.tile_generator.level]
+        current_level_stack.append(points)
+
+    # Pops and returns the most recently pushed list of points from the current level's undo stack.
+    def pop_points(self):
+        current_level_stack = self.undo_stacks[self.tile_generator.level]
+
+        # Only pop if the stack is not empty.
+        if current_level_stack:
+            return current_level_stack.pop()
+        else:
+            return None
+
+    def undo(self):
+        # Pop points.
+        points = self.pop_points()
+
+        current_level = self.tile_generator.level
+
+        # If a list is returned, merge it with the current level's saved points.
+        if points:
+            self.saved_points[current_level] += points
+
+            # Note: Modified files might not always be accurate
+            # since an undo could be returning it to an unmodified state.
+            if current_level not in self.modified_files:
+                self.modified_files.append(current_level)
+            self.draw_image_on_canvas(force_generation=True)
