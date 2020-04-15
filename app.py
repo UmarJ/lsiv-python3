@@ -1,7 +1,6 @@
 import dynamic_tiling
 import heatmap_generation
 from PIL import ImageTk
-from functools import partial
 import tkinter as tk
 from tkinter import messagebox
 
@@ -11,7 +10,6 @@ class App(tk.Tk):
 
         self.root_window = root_window
 
-        self.bbox = []
         self.x, self.y = 0, 0
 
         # x coordinate at top-left, y coordinate at top-left,
@@ -33,7 +31,7 @@ class App(tk.Tk):
         self.fileLabel = tk.Label(self.frame2, text=str("Source:\n" + self.root_window.file_name), bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
         self.fileLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
-        self.buttonClose = tk.Button(self.frame2, font=("Helvetica", 14), text="Close", bg='gray80', command=self.on_closing)
+        self.buttonClose = tk.Button(self.frame2, text="Close", command=self.on_closing)
         self.buttonClose.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
         self.frame = ResizingFrame(self.root_window, self)
@@ -54,9 +52,9 @@ class App(tk.Tk):
         self.vbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.vbar.config(command=self.__scroll_y)
 
-        # remember canvas position
+        # Sets the anchor which can be used to move the canvas if the mouse is dragged.
         self.canvas.bind('<ButtonPress-1>', self.move_from)
-        # move canvas to the new position
+        # Move canvas to the new position using the anchor.
         self.canvas.bind('<B1-Motion>', self.move_to)
         # zoom for Windows and MacOS, but not Linux
         self.canvas.bind_all("<MouseWheel>", self.__wheel)
@@ -66,7 +64,6 @@ class App(tk.Tk):
         self.canvas.bind('<Button-5>', self.__wheeldown)
 
         self.canvas.focus_set()
-        self.canvas.bind("b", self.bounding_box)
 
         self.start_x = None
         self.start_y = None
@@ -89,67 +86,6 @@ class App(tk.Tk):
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
         self.canvas.config(scrollregion=(0, 0, dim[0], dim[1]))
-
-    def bounding_box(self, event):
-        print(event.char)
-        self.deactivate_bindings()
-        self.activate_bbox_bindings()
-
-    def activate_bbox_bindings(self):
-        self.canvas.bind("<ButtonPress-1>", self.on_button_press)
-        self.canvas.bind("<B1-Motion>", self.on_move_press)
-        self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
-
-    def activate_bindings(self):
-        # remember canvas position
-        self.canvas.bind('<ButtonPress-1>', self.move_from)
-        # move canvas to the new position
-        self.canvas.bind('<B1-Motion>', self.move_to)
-
-    def deactivate_bindings(self):
-        self.canvas.unbind('<ButtonPress-1>')
-        self.canvas.unbind('<B1-Motion>')
-
-    def on_button_press(self, event):
-        # get coordinates of the event on the canvas
-        x = self.canvas.canvasx(event.x)
-        y = self.canvas.canvasy(event.y)
-        self.start_x = x
-        self.start_y = y
-        self.rect = self.canvas.create_rectangle(
-            self.start_x, self.start_y, 1, 1, fill="", outline="green")
-
-    def on_move_press(self, event):
-        curX = self.canvas.canvasx(event.x)
-        curY = self.canvas.canvasy(event.y)
-        self.canvas.coords(self.rect, self.start_x, self.start_y, curX, curY)
-
-    def on_save_pressed(self, textBox, MainWin):
-        box = self.canvas.coords(self.rect)
-        self.bbox.append(box)
-        print(self.bbox)
-        MainWin.destroy()
-        file = open("bbox.csv", "a")
-        file.write(textBox.get() + "," + str(box[0]) + "," + str(
-            box[1]) + "," + str(box[2]) + "," + str(box[3]) + "\n")
-        file.close()
-
-    def on_button_release(self, event):
-        MainWin = tk.Toplevel()
-        MainWin.title("Enter Label")
-        MainWin.geometry("150x100")
-
-        lab1 = tk.StringVar()
-        tk.Label(MainWin, text="Please Enter ID:").pack()
-        e = tk.Entry(MainWin, textvariable=lab1)
-        e.pack()
-        tk.Button(MainWin, text="Save", width=10, height=1,
-                  command=partial(self.on_save_pressed, lab1, MainWin)).pack()
-
-        self.canvas.unbind("<ButtonPress-1>")
-        self.canvas.unbind("<B1-Motion>")
-        self.canvas.unbind("<ButtonRelease-1>")
-        self.activate_bindings()
 
     def __scroll_x(self, *args):
         # scroll canvas horizontally and redraw the image
@@ -233,7 +169,7 @@ class App(tk.Tk):
         self.zoom(event, -1)
 
     def move_from(self, event):
-        # remember previous coordinates for scrolling with the mouse
+        # scan_mark sets the anchor for the scan_dragto function to use.
         self.canvas.scan_mark(event.x, event.y)
 
     def move_to(self, event):
