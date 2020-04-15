@@ -12,12 +12,10 @@ class Visualiser(App):
         # Python 2.x compatible constructor
         App.__init__(self, root_window, deep_zoom_object, self.tiles_directory, level=level)
 
-
         # When pressed, toggles the bounding box point removal tool.
         self.toggle_bounding_box_button = tk.Button(self.frame2, text="Bounding\n Box", command=self.toggle_bounding_box_mode)
         self.toggle_bounding_box_button.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
         self.button_original_bg = self.toggle_bounding_box_button.cget("background")
-
 
         # When pressed, prompts for new file names of modified CSVs, and saves them.
         save_csv_button = tk.Button(self.frame2, text='Save', command=self.save_modified)
@@ -203,7 +201,7 @@ class Visualiser(App):
     def bb_mouse_release(self, event):
         # x and y coordinates of the position where the mouse was released on the slide.
         final_x = self.canvas.canvasx(event.x)
-        final_y = self.canvas.canvasx(event.y)
+        final_y = self.canvas.canvasy(event.y)
 
         # Boolean that represnts if points were removed.
         point_removed = self.remove_points_between_bounds(self.bb_start_x, self.bb_start_y, final_x, final_y)
@@ -231,10 +229,9 @@ class Visualiser(App):
         if x1 < x2:
             top_left_x = x1
         else:
-            top_left_x = x2 
+            top_left_x = x2
 
         bottom_right_x = top_left_x + abs(x2 - x1)
-
 
         # The lesser of the two is the y-coordinate of the top left pixel.
         if y1 < y2:
