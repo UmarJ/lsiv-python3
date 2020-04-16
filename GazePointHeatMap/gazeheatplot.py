@@ -168,6 +168,7 @@ def draw_heatmap(gazepoints, dispsize, imagefile=None, alpha=0.5, savefilename=N
 	heatmap = heatmap[strt:dispsize[1] + strt, strt:dispsize[0] + strt]
 	# remove zeros
 	lowbound = numpy.mean(heatmap[heatmap > 0])
+	
 	heatmap[heatmap < lowbound] = numpy.NaN
 	# draw heatmap on top of image
 	ax.imshow(heatmap, cmap='jet', alpha=alpha)
@@ -217,13 +218,11 @@ sd = args['standard_deviation']
 with open(input_path) as f:
 	reader = csv.reader(f)	
 	raw = list(reader)
-	
-	gaza_data = []
+	gaze_data = []
 	if len(raw[0]) is 2:
 		gaze_data = list(map(lambda q: (int(float(q[0])), int(float(q[1])), 1), raw))
 	else:
 		gaze_data =  list(map(lambda q: (int(float(q[0])), int(float(q[1])), int(float(q[2]))), raw))
-		
 	draw_heatmap(gaze_data, (display_width, display_height), alpha=alpha, savefilename=output_name, imagefile=background_image, gaussianwh=ngaussian, gaussiansd=sd)
 
    
