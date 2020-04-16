@@ -75,6 +75,8 @@ def generate_heatmap(deep_zoom_object, folder_path, include_unvisited_tiles=True
         dimensions = column_width, row_height
         first_dimensions = first_column_width, first_row_height
 
+        
+
         final_img = construct_image(current_level_path, present_tiles,
                                     first_index, count, dimensions, first_dimensions, deep_zoom_object, level)
         size = final_img.size[0], final_img.size[1]
@@ -151,22 +153,26 @@ def construct_image(tiles_directory, present_tiles, first_index, count, dimensio
     current_x = 0
     current_y = 0
 
-    for column in range(first_column, first_column + column_count):
-        for row in range(first_row, first_row + row_count):
+    for column in range(first_column, first_column + column_count + 1):
+        prev = 0
+        current_y = 0
+        for row in range(first_row, first_row + row_count + 1):
+
             if (column, row) in present_tiles:
                 tile_name = str(column) + '_' + str(row) + '.jpeg'
-                print("Found: " + tile_name)
+
                 tile = Image.open(os.path.join(tiles_directory, tile_name))
                 result.paste(im=tile, box=(current_x, current_y))
+
             # if the tile has not been generated previously, then  generate the tile
             elif deep_zoom_object is not None:
                 tile = deep_zoom_object.get_tile(level, (column, row))
                 result.paste(im=tile, box=(current_x, current_y))
 
             current_y += tile.size[1]
-        current_y = 0
-        current_x += tile.size[0]
-
+            prev = tile.size[0]
+        current_x +=prev
+            
     return result
 
 
@@ -177,5 +183,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     svs_path = os.path.abspath(args.svs)
     lsiv_output_path = os.path.abspath(args.lsiv_output)
+    # svs_path = "C:/Users/smart/Documents/Projects/lsiv-python3/62893.svs"
+    # lsiv_output_path = "C:/Users/smart/Documents/Projects/lsiv-python3/2020-03-19 15-35-27"
 
     generate_heatmap(DeepZoomGenerator(open_slide(svs_path)), lsiv_output_path)
