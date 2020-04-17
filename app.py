@@ -1,8 +1,8 @@
 import dynamic_tiling
 import heatmap_generation
 from PIL import ImageTk
-import tkinter as tk
-from tkinter import messagebox
+import Tkinter as tk
+import tkMessageBox as messagebox
 
 
 class App(tk.Tk):
@@ -179,7 +179,6 @@ class App(tk.Tk):
 
     def draw_image_on_canvas(self, force_generation=False):
         """Draws the image on the canvas.
-
         Args:
             force_generation: Is True if the image should be re-generated even if the bounds are same as before.
         """
