@@ -65,17 +65,17 @@ def generate_heatmap(deep_zoom_object, folder_path, include_unvisited_tiles=True
             _, first_row_height = deep_zoom_object.get_tile_dimensions(level, (1, 1))
 
         column_width, row_height = (0, 0)
-
         # column width and row height is only relevant when more than one column is required
         if column_count > 1 and row_count > 1:
             column_width, row_height = deep_zoom_object.get_tile_dimensions(level, (1, 1))
+        elif column_count >1 or row_count > 1:
+            column_width, row_height = deep_zoom_object.get_tile_dimensions(level, (column_count-1, row_count-1))
+
 
         first_index = first_column, first_row
         count = column_count, row_count
         dimensions = column_width, row_height
         first_dimensions = first_column_width, first_row_height
-
-        
 
         final_img = construct_image(current_level_path, present_tiles,
                                     first_index, count, dimensions, first_dimensions, deep_zoom_object, level)
@@ -153,10 +153,14 @@ def construct_image(tiles_directory, present_tiles, first_index, count, dimensio
     current_x = 0
     current_y = 0
 
+
+
+
     for column in range(first_column, first_column + column_count + 1):
         prev = 0
         current_y = 0
         for row in range(first_row, first_row + row_count + 1):
+
 
             if (column, row) in present_tiles:
                 tile_name = str(column) + '_' + str(row) + '.jpeg'
