@@ -2,7 +2,7 @@ from app import App
 from utils import set_up_folder
 import os
 import tracking
-import tkinter as tk
+import Tkinter as tk
 from PIL import ImageTk
 from functools import partial
 from threading import Thread
