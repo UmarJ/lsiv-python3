@@ -14,7 +14,7 @@ class Recorder(App):
         # Python 2.x compatible constructor
         App.__init__(self, root_window, deep_zoom_object, tiles_folder, level=level)
 
-        assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+        assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..//assets")
 
         self.imgEyeOff = ImageTk.PhotoImage(file=os.path.join(assets_dir, "icon2xOff.png"))
         self.imgEyeOn = ImageTk.PhotoImage(file=os.path.join(assets_dir, "icon2xOn.png"))
