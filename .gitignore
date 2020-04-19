@@ -1,7 +1,7 @@
 .vscode/
 .pylintrc
-lsiv_output/
-output/
+lsiv_output/*
+output/*
 .idea/
 __pycache__/
 *.pyc
