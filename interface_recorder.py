@@ -5,8 +5,7 @@ import tkFileDialog as filedialog
 import ttk
 from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
-from recorder import Recorder
-from visualiser import Visualiser
+from modules.recorder import Recorder
 
 class FileSelection:
 
@@ -60,16 +59,21 @@ class LevelSelection:
         confirm = tk.Button(frame, text='OK')
         confirm.pack()
 
+
         def on_button_press(event):
             frame.pack_forget()
 
-            # if tiles_dirctory is provided in args, the visualiser tool is run
-            if root.tiles_directory is None:
-                Recorder(root, deep_zoom_object=dz_generator, level=int(selection.get()))
-                print ("Recorder")
-            else:
-                Visualiser(root, deep_zoom_object=dz_generator, level=int(selection.get()))
-                print ("Visualiser")
+            Recorder(root, deep_zoom_object=dz_generator, level=int(selection.get()))
+            #     print ("Recorder")
+
+            # # if tiles_dirctory is provided in args, the visualiser tool is run
+            # if root.tiles_directory is None:
+            #     Recorder(root, deep_zoom_object=dz_generator, level=int(selection.get()))
+            #     print ("Recorder")
+            # else:
+            #     Visualiser(root, deep_zoom_object=dz_generator, level=int(selection.get()))
+            #     print ("Visualiser")
+
 
         confirm.bind('<Button-1>', on_button_press)
 
