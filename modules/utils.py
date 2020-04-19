@@ -7,7 +7,7 @@ from datetime import datetime
 # Update (-Komal): converted from info.txt -> info.json for improved data retrieval
 def set_up_folder(dz_generator, file_name, file_path):
     folder_path = os.path.join(os.path.dirname(os.path.abspath(
-        __file__)), 'lsiv_output', datetime.now().strftime('%Y-%m-%d %H-%M-%S'))
+        __file__)), '..//output', datetime.now().strftime('%Y-%m-%d %H-%M-%S'))
     os.makedirs(folder_path)
 
     level_count = dz_generator.level_count

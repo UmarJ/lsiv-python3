@@ -1,9 +1,9 @@
 from app import App
 import os
 import csv
-import tkinter as tk
+import Tkinter as tk
 from PIL import ImageDraw
-from tkinter import simpledialog
+import tkSimpleDialog as simpledialog
 
 
 class Visualiser(App):
