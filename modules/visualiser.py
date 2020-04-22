@@ -165,7 +165,7 @@ class Visualiser(App):
             for level, new_name in file_names.items():
                 # The path to the save location of the csv
                 csv_path = os.path.join(self.tiles_directory, new_name + ".csv")
-                with open(csv_path, 'w+') as csv_file:
+                with open(csv_path, 'wb+') as csv_file:
                     writer = csv.writer(csv_file, delimiter=',')
                     writer.writerows(self.saved_points.get(level))
 
