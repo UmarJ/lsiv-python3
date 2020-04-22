@@ -7,7 +7,7 @@ from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 
 
-def generate_heatmap(deep_zoom_object, folder_path, include_unvisited_tiles=True):
+def generate_heatmap(deep_zoom_object, folder_path, gaussian_matrix_size, include_unvisited_tiles=True):
 
     tiles_folder_path = os.path.join(folder_path, 'tiles')
 
@@ -106,10 +106,10 @@ def generate_heatmap(deep_zoom_object, folder_path, include_unvisited_tiles=True
         final_img.save(os.path.join(folder_path, img_name), quality=95)
         print("Generating Heatmap for Level {}".format(level))
         gazeheatplot_path = os.path.join(os.path.dirname(os.path.abspath(
-            __file__)), "GazePointHeatMap", "gazeheatplot.py")
+            __file__)), "..//GazePointHeatMap", "gazeheatplot.py")
         subprocess.call(["python", gazeheatplot_path, os.path.join(folder_path, csv_name), str(final_img.size[0]),
                          str(final_img.size[1]),
-                         "-a 0.6", "-o" + heatmap_name, "-b" + os.path.join(folder_path, img_name), "-n 200"])
+                         "-a 0.6", "-o" + os.path.join(folder_path,heatmap_name), "-b" + os.path.join(folder_path, img_name), "-n" + gaussian_matrix_size])
         # -sd 20 to be added later
 
         # if the heatmap is not found in the folder then it must be in directory the python subprocess was called from
