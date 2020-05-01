@@ -91,18 +91,16 @@ class HeatMapSettingsMenu:
 
         # Radio Button for level-wise & merged level
         self.var = tk.IntVar()
-        tk.Radiobutton(self.frame, text="Level Wise", variable=self.var, value=1).grid(sticky="W",column=1, row=5)
-        tk.Radiobutton(self.frame, text="Merge All Levels \t \t   ", variable=self.var, value=2).grid(sticky="E",column=1, row=5)
+        tk.Radiobutton(self.frame, text="Merge All Levels", variable=self.var, value=1).grid(sticky="W",column=1, row=5)
+        tk.Radiobutton(self.frame, text="Level-wise \t \t   ", variable=self.var, value=2).grid(sticky="E",column=1, row=5)
         self.var.set(1)
-        # # Level Selection
-        # select_level = ttk.Label(frame, text="Select Initial Level: ")
-        # select_level.grid(sticky="E", column=0, row=4)
-        #
-        # # Combo box for initial level
-        # selection = ttk.Combobox(
-        #     frame, values=[level for level in os.listdir(root.file_path+'/tiles')
-        #                    if os.path.isdir(os.path.join(root.file_path+'/tiles', level))])
-        # selection.grid(sticky="W", column=1, row=4)
+
+        # Radio Button for binary map & heat map
+        self.map = tk.StringVar()
+        tk.Radiobutton(self.frame, text="Heat Map", variable=self.map, value="heatmap").grid(sticky="W", column=1, row=6)
+        tk.Radiobutton(self.frame, text="Binary Map \t \t   ", variable=self.map, value="binarymap").grid(sticky="E", column=1, row=6)
+        self.map.set("heatmap")
+
 
         # Confirm button
         confirm = tk.Button(self.frame, text='OK')
@@ -156,7 +154,7 @@ class HeatMapSettingsMenu:
             os.makedirs(path)
 
         for newCSV in result:
-            for level in range(7, self.max_level):
+            for level in range(9, self.max_level):
                 scaling_factor = 2 ** (self.max_level - level)
                 csv_output = open(os.path.join(path, "Level " + str(level) + ".csv"), "a")
                 with open(csv_output.name, 'wb+') as csv_file:
@@ -178,13 +176,14 @@ class HeatMapSettingsMenu:
             slide = open_slide(self.entry_file_path.get())
             dz_generator = DeepZoomGenerator(slide)
 
-            if self.var.get() == 1:
-                # Start main program
-                heatmap_generation.generate_heatmap(dz_generator, root.file_path, self.gaussian_matrix_size.get())
+            if self.var.get() == 2:
+
+                heatmap_generation.generate_heatmap(dz_generator, root.file_path, self.gaussian_matrix_size.get(), self.map.get())
             else:
                 self.merged_levels()
+                # Start main program
                 heatmap_generation.generate_heatmap(dz_generator,  os.path.join(root.file_path, 'Merged_Levels'),
-                                                    self.gaussian_matrix_size.get())
+                                                    self.gaussian_matrix_size.get(), self.map.get())
                 print "DONE"
 
 

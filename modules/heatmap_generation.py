@@ -7,7 +7,7 @@ from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 
 
-def generate_heatmap(deep_zoom_object, folder_path, gaussian_matrix_size, include_unvisited_tiles=True):
+def generate_heatmap(deep_zoom_object, folder_path, gaussian_matrix_size, map_type="heatmap", alpha = 0.6,  include_unvisited_tiles=True):
 
     tiles_folder_path = os.path.join(folder_path, 'tiles')
 
@@ -101,15 +101,20 @@ def generate_heatmap(deep_zoom_object, folder_path, gaussian_matrix_size, includ
             (int(size[0] / scaling_factor), int(size[1] / scaling_factor)), Image.ANTIALIAS)
         print("New Size: {}".format(final_img.size))
 
-        heatmap_name = "Heatmap " + img_name
+        if map_type == "binarymap":
+            heatmap_name = "Binarymap " + img_name
+        else:
+            heatmap_name = "Heatmap " + img_name
+
         # https://pillow.readthedocs.io/en/5.1.x/handbook/image-file-formats.html
         final_img.save(os.path.join(folder_path, img_name), quality=95)
-        print("Generating Heatmap for Level {}".format(level))
+        print("Generating map for Level {}".format(level))
         gazeheatplot_path = os.path.join(os.path.dirname(os.path.abspath(
             __file__)), "..//GazePointHeatMap", "gazeheatplot.py")
         subprocess.call(["python", gazeheatplot_path, os.path.join(folder_path, csv_name), str(final_img.size[0]),
                          str(final_img.size[1]),
-                         "-a 0.6", "-o" + os.path.join(folder_path,heatmap_name), "-b" + os.path.join(folder_path, img_name), "-n" + gaussian_matrix_size])
+                         "-a " + str(alpha), "-o" + os.path.join(folder_path,heatmap_name), "-b" + os.path.join(folder_path, img_name),
+                         "-n" + gaussian_matrix_size, "-m" + map_type])
         # -sd 20 to be added later
 
         # if the heatmap is not found in the folder then it must be in directory the python subprocess was called from
@@ -118,10 +123,10 @@ def generate_heatmap(deep_zoom_object, folder_path, gaussian_matrix_size, includ
                 os.rename(heatmap_name, os.path.join(folder_path, heatmap_name))
             # this exception is thrown when the heatmap was not generated for some reason
             except IOError:
-                print("Error while generating heatmap for Level {}".format(level))
+                print("Error while generating map for Level {}".format(level))
                 continue
 
-        print("Heatmap saved as {}".format('Heatmap ' + img_name))
+        print("Map saved as {}".format(map_type + " " + img_name))
 
 
 # if no deep_zoom_object is passed, the area where no tiles are needed will be black
