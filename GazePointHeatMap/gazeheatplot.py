@@ -92,7 +92,7 @@ def gaussian(x, sx, y=None, sy=None):
 
 	return M
 
-def draw_heatmap(gazepoints, dispsize, imagefile=None, alpha=0.5, savefilename=None, gaussianwh=200, gaussiansd=None):
+def draw_heatmap(gazepoints, dispsize, imagefile=None, alpha=0.5, savefilename=None, gaussianwh=200, gaussiansd=None, map_type="heatmap"):
 	"""Draws a heatmap of the provided fixations, optionally drawn over an
 	image, and optionally allocating more weight to fixations with a higher
 	duration.
@@ -169,9 +169,23 @@ def draw_heatmap(gazepoints, dispsize, imagefile=None, alpha=0.5, savefilename=N
 	# remove zeros
 	lowbound = numpy.mean(heatmap[heatmap > 0])
 	
-	heatmap[heatmap < lowbound] = numpy.NaN
-	# draw heatmap on top of image
-	ax.imshow(heatmap, cmap='jet', alpha=alpha)
+
+	if map_type.strip() == "binarymap":
+		heatmap[heatmap < lowbound] = 0
+		# define the colors - black & white
+		cmap = matplotlib.colors.ListedColormap([(0,0,0,alpha),(1,1,1,0)])
+		bounds = [0., 0.5, 1.]
+		norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
+		# draw heatmap on top of image
+		ax.imshow(heatmap, cmap=cmap, norm=norm)
+	else:
+		heatmap[heatmap < lowbound] = numpy.NaN
+		ax.imshow(heatmap, cmap='jet', alpha=alpha)
+
+
+
+
+
 
 	# FINISH PLOT
 	# invert the y axis, as (0,0) is top left on a display
@@ -203,6 +217,8 @@ parser.add_argument('-b',  '--background-image', type=str, default=None, require
 parser.add_argument('-n', '--n-gaussian-matrix', type=int, default='200', required=False, help='width and height of gaussian matrix')
 parser.add_argument('-sd',  '--standard-deviation', type=float, default=None ,required=False, help='standard deviation of gaussian distribution')
 
+#additional gaze software specific arguments (Komal)
+parser.add_argument('-m','--map-type',type=str,default="heatmap",required=False,help='Binary map visualisation')
 
 args = vars(parser.parse_args())
 
@@ -214,6 +230,8 @@ output_name = args['output_name'] if args['output_name'] is not None else 'outpu
 background_image = args['background_image']
 ngaussian = args['n_gaussian_matrix']
 sd = args['standard_deviation']
+# added
+map_type=args['map_type']
 
 with open(input_path) as f:
 	reader = csv.reader(f)	
@@ -223,6 +241,7 @@ with open(input_path) as f:
 		gaze_data = list(map(lambda q: (int(float(q[0])), int(float(q[1])), 1), raw))
 	else:
 		gaze_data =  list(map(lambda q: (int(float(q[0])), int(float(q[1])), int(float(q[2]))), raw))
-	draw_heatmap(gaze_data, (display_width, display_height), alpha=alpha, savefilename=output_name, imagefile=background_image, gaussianwh=ngaussian, gaussiansd=sd)
+	draw_heatmap(gaze_data, (display_width, display_height), alpha=alpha, savefilename=output_name,
+				 imagefile=background_image, gaussianwh=ngaussian, gaussiansd=sd, map_type=map_type)
 
    
