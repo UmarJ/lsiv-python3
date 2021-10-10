@@ -1,8 +1,8 @@
 import os
-import Tkinter as tk
-import ttk
-import tkFileDialog as filedialog
-import tkMessageBox as messagebox
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
+from tkinter import messagebox
 from modules import heatmap_generation
 from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
@@ -146,8 +146,8 @@ class HeatMapSettingsMenu:
                     count = count + 1
 
 
-        print "Count: "
-        print len(max_level_merged)
+        print("Count: ")
+        print(len(max_level_merged))
 
         path = os.path.join(root.file_path, 'Merged_Levels')
         if not os.path.exists(path):
@@ -184,7 +184,7 @@ class HeatMapSettingsMenu:
                 # Start main program
                 heatmap_generation.generate_heatmap(dz_generator,  os.path.join(root.file_path, 'Merged_Levels'),
                                                     self.gaussian_matrix_size.get(), self.map.get())
-                print "DONE"
+                print("DONE")
 
 
 

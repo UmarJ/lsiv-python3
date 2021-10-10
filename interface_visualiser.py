@@ -1,8 +1,8 @@
 import os
-import Tkinter as tk
-import tkFileDialog as filedialog
-import tkMessageBox as messagebox
-import ttk
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
+from tkinter import ttk
 from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 from modules.visualiser import Visualiser

@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import stitch
+from modules import stitch
 from functools import partial
 from threading import Thread
 from math import ceil

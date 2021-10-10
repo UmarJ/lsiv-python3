@@ -1,8 +1,8 @@
-import dynamic_tiling
-import heatmap_generation
+from modules import dynamic_tiling
+from modules import heatmap_generation
 from PIL import ImageTk
-import Tkinter as tk
-import tkMessageBox as messagebox
+import tkinter as tk
+from tkinter import messagebox
 
 
 class App(tk.Tk):

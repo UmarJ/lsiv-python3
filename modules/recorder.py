@@ -1,8 +1,8 @@
-from app import App
-from utils import set_up_folder
+from modules.app import App
+from modules.utils import set_up_folder
 import os
-import tracking
-import Tkinter as tk
+from modules import tracking
+import tkinter as tk
 from PIL import ImageTk
 from functools import partial
 from threading import Thread

@@ -1,8 +1,8 @@
 import os
-import Tkinter as tk
+import tkinter as tk
 import sys
-import tkFileDialog as filedialog
-import ttk
+from tkinter import filedialog
+from tkinter import ttk
 from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 from modules.recorder import Recorder
