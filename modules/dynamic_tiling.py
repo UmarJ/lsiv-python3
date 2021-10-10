@@ -1,10 +1,10 @@
 import os
+import sys
 import numpy as np
 from modules import stitch
-from functools import partial
-from threading import Thread
 from math import ceil
-
+import subprocess
+from modules import tile_generator
 
 class DynamicTiling:
 
@@ -20,10 +20,13 @@ class DynamicTiling:
         self.tiles_folder_path = os.path.join(folder_path, 'tiles')
         self.level_path = os.path.join(self.tiles_folder_path, str(level))
         self.tiles_generated = {}
+        self.pipes = []
+        self.process_count = 3
 
         # Create the directory if it does not exist.
         if not os.path.isdir(self.level_path):
             os.makedirs(self.level_path)
+        self.initiate_processes()
 
     def get_dim(self):
         return self.deep_zoom.level_dimensions[self.level]
@@ -142,7 +145,7 @@ class DynamicTiling:
         files_list = [str(column) + '_' + str(row) + self.file_extension
                       for column in range(first_column, last_column + 1)
                       for row in range(first_row, last_row + 1)]
-        self.generate_with_threads(self.level_path, files_list, num_threads=3)
+        self.generate_with_processes(files_list)
 
         # split the list so that each part consists of tiles of 1 column
         files_list = split_list(files_list, last_column - first_column + 1)
@@ -165,29 +168,35 @@ class DynamicTiling:
 
         return img
 
-    def generate_with_threads(self, path, file_names, num_threads=1):
-        # split the file names into 'thread' parts
-        file_names = split_list(file_names, num_threads)
-        threads = []
+    def initiate_processes(self):
+        deep_path = self.deep_zoom._osr._filename
+        for i in range(self.process_count):
+            self.pipes.append(subprocess.Popen([sys.executable, os.path.realpath(tile_generator.__file__)],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                encoding='utf8',
+                env=os.environ
+            ))
 
-        for i in range(num_threads):
-            # create a thread with a partial function
-            t = Thread(target=partial(self.generate_tiles, path, file_names[i]))
-            t.start()  # start the thread
-            threads.append(t)
+            current_pipe = self.pipes[i]
 
-        for t in threads:  # call to join is blocked until the thread finishes execution
-            t.join()
+            current_pipe.stdin.write(deep_path + '\n')
+            current_pipe.stdin.write(str(self.level) + '\n')
+            current_pipe.stdin.write(self.level_path + '\n')
+            current_pipe.stdin.flush()  
 
-    def generate_tiles(self, path, file_names):
-        current_level_tiles = self.tiles_generated.setdefault(self.level, [])
-        for file in file_names:
-            if not os.path.isfile(os.path.join(self.level_path, file)):
-                column, row = file.split('_')
-                row = row.split('.')[0]
-                current_level_tiles.append((int(row), int(column)))
-                image = self.deep_zoom.get_tile(self.level, (int(column), int(row)))
-                image.save(os.path.join(path, file), "JPEG")
+    def generate_with_processes(self, file_names):
+        # split the file names into 'num_processes' parts
+        file_list = split_list(file_names, self.process_count)
+
+        for i, pipe in enumerate(self.pipes):
+            if file_list[i]:
+                file_list_str = ";".join(file_list[i])
+                pipe.stdin.write(file_list_str + '\n')
+                pipe.stdin.flush()
+
+        for pipe in self.pipes:
+            pipe.stdout.readline()
 
     def change_level(self, new_level):
         # check bounds
@@ -204,7 +213,6 @@ class DynamicTiling:
             # set the path to the new path
             self.level_path = new_path
             self.images_width, self.images_height = self.get_file_details()
-
 
 # helper function to split a list into parts
 def split_list(input_list, parts):
