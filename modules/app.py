@@ -130,14 +130,18 @@ class App(tk.Tk):
         self.top_left = (-1, -1)
 
         # the draw_image_on_canvas function cannot be used since this needs to scroll the canvas too
-        image, self.top_left = self.get_image(self.box_coords)
+        label, self.top_left = self.get_image(self.box_coords)
 
-        self.image = ImageTk.PhotoImage(image=image)
-
+        #self.image = ImageTk.PhotoImage(image=image)
+        self.label = label
         # delete the old image and set the new image
         self.canvas.delete("all")
-        self.image_on_canvas = self.canvas.create_image(
-            canvas_top_left[0], canvas_top_left[1], image=self.image, anchor="nw")
+
+        #yaad rakhna remove karna hai
+        #TODO
+
+        self.image_on_canvas = self.canvas.create_window(
+            canvas_top_left[0], canvas_top_left[1], window=label, anchor="nw")
 
         scrollbar_x = canvas_top_left[0] / new_dim[0]
         scrollbar_y = canvas_top_left[1] / new_dim[1]
@@ -196,16 +200,20 @@ class App(tk.Tk):
 
         self.box_coords = box_coords
 
-        image, self.top_left = self.get_image(box_coords, force_generation=force_generation)
+        widget, self.top_left = self.get_image(box_coords, force_generation=force_generation)
 
-        if image is not None:
+        print(self.top_left)
+
+        if widget is not None:
             self.canvas.delete("all")
-
             # this ownership is necessary, or the image does not show up on the canvas
-            self.image = ImageTk.PhotoImage(image=image)
+            #self.image = ImageTk.PhotoImage(image=image)
+            self.label=widget
 
-            self.image_on_canvas = self.canvas.create_image(
-                self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
+
+            self.image_on_canvas = self.canvas.create_window(
+                self.top_left[0], self.top_left[1], window=widget, anchor="nw",
+                height=self.frame.height,width=self.frame.width)
 
     # virtual method
     def get_image(self, box_coords):

@@ -49,5 +49,6 @@ class Recorder(App):
             Thread(target=partial_function).start()
 
     def get_image(self, box_coords, force_generation=False):
-        image, top_left = self.tile_generator.generate_image(box_coords, self.top_left)
-        return image, top_left
+        #image, top_left = self.tile_generator.generate_image(box_coords, self.top_left)
+        label, top_left = self.tile_generator.generate_image(box_coords, self.top_left)
+        return label, top_left

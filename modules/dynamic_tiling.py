@@ -5,6 +5,8 @@ from modules import stitch
 from math import ceil
 import subprocess
 from modules import tile_generator
+from PIL import ImageTk
+import tkinter as tk
 
 class DynamicTiling:
 
@@ -118,7 +120,6 @@ class DynamicTiling:
             last_row = self.rows - 1
 
         top_left = (0, 0)
-
         if first_column != 0:
             top_left = (self.first_column_width + (first_column - 1) * self.column_width, top_left[1])
 
@@ -135,13 +136,34 @@ class DynamicTiling:
             first_row = 0
             first_column = 0
 
-        img = self.stitch_parts(first_column, last_column, first_row, last_row)
+        label = self.get_grid_label(first_column, last_column, first_row, last_row)
 
-        return img, top_left
+        return label, top_left
+
+    def get_grid_label(self, first_column, last_column, first_row, last_row):
+        # the list of files required
+        files_list = [str(column) + '_' + str(row) + self.file_extension
+                      for column in range(first_column, last_column + 1)
+                      for row in range(first_row, last_row + 1)]
+        self.generate_with_processes(files_list)
+
+        # split the list so that each part consists of tiles of 1 column
+        files_list = split_list(files_list, last_column - first_column + 1)
+
+        main_frame = tk.Frame()
+        for row1 in range(first_row,last_row):
+            for column1 in range(first_column,last_column):
+                im = self.deep_zoom.get_tile(self.level,(column1,row1))
+                image = ImageTk.PhotoImage(im)
+                label1 = tk.Label(main_frame,image=image,borderwidth=0)
+                label1.image = image
+                label1.grid(row=row1, column=column1,sticky=tk.NSEW,padx=0,pady=0)
+
+        return main_frame
 
     def stitch_parts(self, first_column, last_column, first_row, last_row):
-
         # the list of files required
+
         files_list = [str(column) + '_' + str(row) + self.file_extension
                       for column in range(first_column, last_column + 1)
                       for row in range(first_row, last_row + 1)]
@@ -162,7 +184,6 @@ class DynamicTiling:
             npArray = np.array(image_columns[i])
             if (npArray.shape[0] > minColumn):
                 image_columns[i] = npArray[:minColumn]
-
         # stitch all the columns to form the image
         img = stitch.join_horizontally(image_columns)
 
