@@ -196,16 +196,19 @@ class App(tk.Tk):
 
         self.box_coords = box_coords
 
-        image, self.top_left = self.get_image(box_coords, force_generation=force_generation)
+        image_dict, self.top_left = self.get_image(box_coords, force_generation=force_generation)
 
-        if image is not None:
+        if image_dict is not None:
             self.canvas.delete("all")
-
+            # print(image_dict)
             # this ownership is necessary, or the image does not show up on the canvas
-            self.image = ImageTk.PhotoImage(image=image)
-
-            self.image_on_canvas = self.canvas.create_image(
-                self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
+            self.images = []
+            for (x, y), image in image_dict.items():
+                image = ImageTk.PhotoImage(image=image)
+                self.images.append(image)
+                
+                self.canvas.create_image(
+                    x, y, image=image, anchor="nw")
 
     # virtual method
     def get_image(self, box_coords):

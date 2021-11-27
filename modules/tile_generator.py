@@ -15,11 +15,11 @@ def listen_and_generate(file_path, current_level, current_level_path):
         for file in file_list:
             if not os.path.isfile(os.path.join(current_level_path, file)):
                 column, row = file.split('_')
-                row = row.split('.')[0]
-                
+                row,extension = row.split('.')
                 image = deep_zoom.get_tile(current_level, (int(column), int(row)))
-                
-                image.save(os.path.join(current_level_path, file), "JPEG")
+                x_coord,y_coord = deep_zoom.get_tile_coordinates(current_level,(int(column),int(row)))[0]
+                #image.save(os.path.join(current_level_path, file), "JPEG")
+                image.save(os.path.join(current_level_path, str(column)+"_"+str(row)+"-"+str(x_coord)+"_"+str(y_coord)+"."+extension), "JPEG")
         sys.stdout.write("\n")
         sys.stdout.flush()
 

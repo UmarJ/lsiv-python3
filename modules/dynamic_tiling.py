@@ -1,10 +1,13 @@
 import os
 import sys
 import numpy as np
+import PIL
 from modules import stitch
 from math import ceil
 import subprocess
 from modules import tile_generator
+import cv2
+
 
 class DynamicTiling:
 
@@ -135,9 +138,48 @@ class DynamicTiling:
             first_row = 0
             first_column = 0
 
-        img = self.stitch_parts(first_column, last_column, first_row, last_row)
+        #img = self.stitch_parts(first_column, last_column, first_row, last_row)
+        image_dict = self.grid_images(first_column, last_column, first_row, last_row)
 
-        return img, top_left
+
+        return image_dict, top_left
+
+    def grid_images(self, first_column, last_column, first_row, last_row):
+        # the list of files required
+        #im= str.startswith(str(column)+"_"+str(row))
+        files_list = [str(column) + '_' + str(row)+self.file_extension
+                      for column in range(first_column, last_column + 1)
+                      for row in range(first_row, last_row + 1)]
+        self.generate_with_processes(files_list)
+
+        # split the list so that each part consists of tiles of 1 column
+        #files_list = split_list(files_list, last_column - first_column + 1)
+
+        files_arr = os.listdir(self.level_path)
+        images = {}
+
+        for row1 in range(first_row,last_row):
+            for column1 in range(first_column,last_column):
+                
+                for file in files_arr:
+                    if file.startswith(str(column1)+'_'+str(row1)):
+                        file_name = file
+                        break
+
+                #print(file_name)
+                coordinates=file_name.split("-")[1]
+                x_coord, y_coord= coordinates.split("_")
+                y_coord=y_coord.split(".")[0]
+
+                image = cv2.cvtColor(cv2.imread(os.path.join(self.level_path, file_name)), cv2.COLOR_BGR2RGB)
+
+                images[(int(x_coord),int(y_coord))]=PIL.Image.fromarray(image)
+        
+        return images
+
+    # def read_files(path):
+    #     files_array=os.listdir(path)
+    #     return files_array
 
     def stitch_parts(self, first_column, last_column, first_row, last_row):
 
@@ -151,7 +193,6 @@ class DynamicTiling:
         files_list = split_list(files_list, last_column - first_column + 1)
 
         image_columns = []
-
         # join the tiles into columns
         for column in files_list:
             image_columns.append(stitch.join_vertically(self.level_path, column))
