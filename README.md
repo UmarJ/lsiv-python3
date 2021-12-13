@@ -80,6 +80,17 @@ This repo contains the source code for 'Visnotate' which is a tool that can be u
 # Supported Hardware and Software
 At this time visinotate supports the GazePoint GP3, tracking hardware. WSI's are read using openslide software and we support only the `.svs` file format. We do have plans to add support for other gaze tracking hardware and image formats later.
 
+# Screenshots
+
+## The Visnotate Interface
+![Interface Screenshot](../media/sample-ui.png?raw=true)
+
+## Collected Gazepoints
+![Gazepoints Screenshot](../media/sample-gazepoints.png?raw=true)
+
+## Generated Heatmap
+![Heatmap Screenshot](../media/sample-heatmap.png?raw=true)
+
 # Reference
 This repo was used to generate the results for the following paper on Gaze-based labelling of Pathology data. 
    
