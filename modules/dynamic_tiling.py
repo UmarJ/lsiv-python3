@@ -158,8 +158,8 @@ class DynamicTiling:
         files_arr = os.listdir(self.level_path)
         images = {}
 
-        for row1 in range(first_row,last_row):
-            for column1 in range(first_column,last_column):
+        for row1 in range(first_row,last_row+1):
+            for column1 in range(first_column,last_column+1):
                 
                 for file in files_arr:
                     if file.startswith(str(column1)+'_'+str(row1)):
