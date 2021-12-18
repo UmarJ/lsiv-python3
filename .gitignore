@@ -6,3 +6,7 @@ output/*
 __pycache__/
 *.pyc
 lsiv_output.zip
+CMU-1.svs
+grid_tool/
+image.jpg
+visnotate/
