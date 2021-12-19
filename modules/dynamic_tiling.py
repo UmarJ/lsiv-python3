@@ -181,8 +181,8 @@ class DynamicTiling:
             current_pipe = self.pipes[i]
 
             current_pipe.stdin.write(deep_path + '\n')
-            current_pipe.stdin.write(str(self.level) + '\n')
-            current_pipe.stdin.write(self.level_path + '\n')
+            #current_pipe.stdin.write(str(self.level) + '\n')
+            #current_pipe.stdin.write(self.level_path + '\n')
             current_pipe.stdin.flush()  
 
     def generate_with_processes(self, file_names):
@@ -192,11 +192,16 @@ class DynamicTiling:
         for i, pipe in enumerate(self.pipes):
             if file_list[i]:
                 file_list_str = ";".join(file_list[i])
-                pipe.stdin.write(file_list_str + '\n')
+                pipe.stdin.write(file_list_str + "|"+str(self.level)+"|"+self.level_path + '\n')
+                #pipe.stdin.flush()
+                #pipe.stdin.write("|"+str(self.level)+"|")
+                #pipe.stdin.flush()
+                #pipe.stdin.write(self.level_path)
                 pipe.stdin.flush()
-
         for pipe in self.pipes:
-            pipe.stdout.readline()
+            line = pipe.stdout.readline()
+
+        print("\n\n"+line+"\n\n")
 
     def change_level(self, new_level):
         # check bounds
