@@ -201,8 +201,7 @@ class DynamicTiling:
         for pipe in self.pipes:
             line = pipe.stdout.readline()
 
-        print("\n\n"+line+"\n\n")
-
+        
     def change_level(self, new_level):
         # check bounds
         if new_level < self.max_level and new_level >= 0:

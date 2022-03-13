@@ -6,6 +6,8 @@ import tkinter as tk
 from PIL import ImageTk
 from functools import partial
 from threading import Thread
+import slide_map1
+import asyncio
 
 
 class Recorder(App):
@@ -20,11 +22,13 @@ class Recorder(App):
         self.imgEyeOn = ImageTk.PhotoImage(file=os.path.join(assets_dir, "icon2xOn.png"))
 
         # TODO: Fix the order of buttons
-        self.notificationLabel = tk.Label(self.frame2, text="Gaze Recording Disabled", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
-        self.notificationLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+        self.notificationLabel = tk.Label(self.root_window, text="Gaze Recording Disabled", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        # self.notificationLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+        self.notificationLabel.place(x=18,y=370)
 
-        self.gazeToggleButton = tk.Button(self.frame2, fg="red", text="hello", bg='gray80', image=self.imgEyeOff, command=self.start_stop_tracking)
-        self.gazeToggleButton.pack(side=tk.LEFT, padx=(15, 15), pady=(15, 15))
+        self.gazeToggleButton = tk.Button(self.root_window, fg="red", text="hello", bg='gray80', image=self.imgEyeOff, command=self.start_stop_tracking)
+        # self.gazeToggleButton.pack(side=tk.LEFT, padx=(15, 15), pady=(15, 15))
+        self.gazeToggleButton.place(x=110,y=420)
 
         self.canvas.bind("t", self.start_stop_tracking)
         self.canvas.bind("h", self.generate_heatmap)
@@ -51,3 +55,4 @@ class Recorder(App):
     def get_image(self, box_coords, force_generation=False):
         image, top_left = self.tile_generator.generate_image(box_coords, self.top_left)
         return image, top_left
+

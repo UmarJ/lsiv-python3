@@ -1,10 +1,20 @@
+import openslide
+from openslide import deepzoom
 from modules import dynamic_tiling
 from modules import heatmap_generation
 from PIL import ImageTk
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import *
+import os
+import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import sys
+# sys.setrecursionlimit(1500) 
 
-
+# async def app_fn():
 class App(tk.Tk):
     def __init__(self, root_window, deep_zoom_object, tiles_folder, level=0):
 
@@ -19,28 +29,66 @@ class App(tk.Tk):
         self.root_window.title("Large Scale Image Viewer")
         self.root_window.attributes("-fullscreen", True)
         self.root_window.config(bg='gray80')
+        # self.root_window.config(bg='blue')
         self.root_window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         self.frame2 = tk.Frame(self.root_window, width=50, height=50)
+
         self.frame2.config(bg='gray80')
+        # self.frame2.config(bg='red')
         self.frame2.pack(fill=None, expand=False)
 
-        self.zoomLabel = tk.Label(self.frame2, text=str(level) + "x", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
-        self.zoomLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
 
-        self.fileLabel = tk.Label(self.frame2, text=str("Source:\n" + self.root_window.file_name), bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        # ws = self.root_window
+        # ws.title('PythonGuides')
+        # ws.geometry('256x256')
+
+        slide = openslide.OpenSlide("H:\Sigma\Gaze Tracking project\Datasets\Whole Slide images\D-001-18.svs")
+        deep_object = deepzoom.DeepZoomGenerator(slide)
+        image1 = deep_object.get_tile(9,(0,0))
+        # img = Image.open(image1)
+        self.pimg = ImageTk.PhotoImage(image1)
+
+        self.canvas1 = Canvas(
+            self.root_window,
+            height=256,
+            width=256,
+            bg="#fff"
+            )
+        self.canvas1.place(x=0,y=0)    
+        # self.canvas1.pack(side=TOP, anchor=NW)
+
+        # img = PhotoImage(pimg)
+        self.canvas1.create_image(0, 0, image=self.pimg, anchor="nw")
+
+        # r1 = self.canvas1.create_rectangle(
+        # 30, 30, 180, 120,
+        # outline="#fb0",
+        # fill= None)
+
+        self.canvas1.bind("<Button-1>", self.mouse_click)
+
+        self.zoomLabel = tk.Label(root_window, text=str(level) + "x", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        # self.zoomLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+        self.zoomLabel.place(x=18, y=420)
+
+        self.fileLabel = tk.Label(self.root_window, text=str("Source:\n" + self.root_window.file_name), bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove", width=20)
         self.fileLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+        self.fileLabel.place(x=18,y=300)
 
-        self.buttonClose = tk.Button(self.frame2, text="Close", command=self.on_closing)
+        self.buttonClose = tk.Button(self.root_window, text="Close", command=self.on_closing)
         self.buttonClose.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+        self.buttonClose.place(x=200, y=420)
 
         self.frame = ResizingFrame(self.root_window, self)
+        # self.frame = tk.Canvas(self.root_window, width=850, height=700)
         self.frame.config(bg='gray80')
-        self.frame.pack(fill=tk.BOTH, expand=tk.YES)
+        # self.frame.pack(fill=tk.BOTH, expand=tk.YES)
+        self.frame.place(relx=0.2,rely=0.05)
 
         self.button1 = tk.Button(self.frame, text='Button1')
 
-        self.canvas = tk.Canvas(self.frame, bg="gray90", width=800, height=600)
+        self.canvas = tk.Canvas(self.frame, bg="gray90", width=850, height=700)
 
         # set up the horizontal scroll bar
         self.hbar = tk.Scrollbar(self.frame, orient=tk.HORIZONTAL)
@@ -75,6 +123,7 @@ class App(tk.Tk):
         self.tile_generator = dynamic_tiling.DynamicTiling(
             deep_zoom_object, level, self.canvas.winfo_reqwidth(), self.canvas.winfo_reqheight(), tiles_folder)
 
+
         # top left coordinate of the current selection relative to the svs file
         # (-1, -1) is used as the initial value since it cannot occur naturally
         self.top_left = (-1, -1)
@@ -82,7 +131,10 @@ class App(tk.Tk):
         self.set_scroll_region()
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
         self.canvas.pack(expand=tk.YES, fill=tk.BOTH, padx=(100, 100), pady=(0, 10))
-
+        # print(1)
+        # subprocess.Popen([sys.executable, "E:\\FYP\\software\\code\\slide_map1.py"])
+        # # os.system("python E:/FYP/software/code/slide_map1.py")
+        # print(2)
     def set_scroll_region(self):
         dim = self.tile_generator.get_dim()
         self.canvas.config(scrollregion=(0, 0, dim[0], dim[1]))
@@ -121,10 +173,10 @@ class App(tk.Tk):
 
         # calculate the new top left for the canvas using the new centre
         canvas_top_left = (max(0, centre_x - (self.frame.width // 2)),
-                           max(0, centre_y - (self.frame.height // 2)))
+                        max(0, centre_y - (self.frame.height // 2)))
 
         self.box_coords = (canvas_top_left[0], canvas_top_left[1],
-                           canvas_top_left[0] + self.frame.width, canvas_top_left[1] + self.frame.height)
+                        canvas_top_left[0] + self.frame.width, canvas_top_left[1] + self.frame.height)
 
         # reset the top left
         self.top_left = (-1, -1)
@@ -148,6 +200,8 @@ class App(tk.Tk):
         # move the canvas to the calculated coordinates
         self.canvas.xview_moveto(scrollbar_x)
         self.canvas.yview_moveto(scrollbar_y)
+
+        self.coordinates(self.box_coords, self.tile_generator.level)
 
         self.draw_image_on_canvas()
 
@@ -177,15 +231,15 @@ class App(tk.Tk):
         self.canvas.scan_dragto(event.x, event.y, gain=1)
         self.draw_image_on_canvas()  # redraw the image
 
-    def draw_image_on_canvas(self, force_generation=False):
+    def draw_image_on_canvas(self ,force_generation=False):
         """Draws the image on the canvas.
         Args:
             force_generation: Is True if the image should be re-generated even if the bounds are same as before.
-        """
-
+        """    
         self.canvas_vertex = (self.canvas.canvasx(0), self.canvas.canvasy(0))
+ 
         box_coords = (self.canvas_vertex[0], self.canvas_vertex[1],
-                      self.canvas_vertex[0] + self.frame.width, self.canvas_vertex[1] + self.frame.height)
+            self.canvas_vertex[0] + self.frame.width, self.canvas_vertex[1] + self.frame.height)
 
         # some weird bug with canvas being 0 when scrolling back to origin
         if box_coords[0] == -1:
@@ -206,6 +260,10 @@ class App(tk.Tk):
 
             self.image_on_canvas = self.canvas.create_image(
                 self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
+            
+            # self.create_circle(3,3,2,self.c)
+            self.coordinates(box_coords, self.tile_generator.level)
+        
 
     # virtual method
     def get_image(self, box_coords):
@@ -218,6 +276,44 @@ class App(tk.Tk):
         if messagebox.askokcancel("Quit", "Do you really wish to quit?"):
             self.root_window.destroy()
 
+
+    def coordinates(self, coordinates, level):
+        if level > 12:
+            coordinates_list = list(coordinates)
+            new_coordinates = [int(element / (2**(level - 9))) for element in coordinates_list]
+            #print("hello")
+            self.canvas1.delete("all")
+            self.canvas1.create_image(0, 0, image=self.pimg, anchor="nw")
+            self.canvas1.create_rectangle(new_coordinates[0],new_coordinates[3],new_coordinates[2],new_coordinates[1])
+        else:
+            self.canvas1.delete("all")
+            self.canvas1.create_image(0, 0, image=self.pimg, anchor="nw")
+        #print(coordinates, new_coordinates[0], new_coordinates[1], level)
+
+    def mouse_click(self,event):
+        # coor = event.widget.coords(self.r1, event.x + 5, event.y + 5, event.x, event.y)
+        level = self.tile_generator.level
+        width = self.frame.width/ (2**(level - 9))
+        height = self.frame.height/ (2**(level - 9))
+        max_coord = self.deep_zoom_object.level_dimensions[9]
+        self.canvas1.delete("all")
+        self.canvas1.create_image(0, 0, image=self.pimg, anchor="nw")
+        self.canvas1.create_rectangle(event.x,event.y, event.x + width, event.y + height)
+        # self.move_to(event)
+        coords = [event.x,event.y, event.x + width, event.y + height]
+        # new_coord = [coord * (2**(level - 9)) for coord in coords]
+        new_coord_x = coords[0]/max_coord[0]
+        new_coord_y = coords[1]/max_coord[1]
+
+        print(new_coord_x,new_coord_y)
+        # event.x=width
+        # event.y=height
+        # self.__scroll_x(moveto = event.x)
+        # self.__scroll_y(moveto = event.y)
+        self.canvas.xview_moveto(new_coord_x)
+        self.canvas.yview_moveto(new_coord_y)
+        self.draw_image_on_canvas()
+        # self.draw_image_on_canvas(cond=False)
 
 class ResizingFrame(tk.Frame):
 
@@ -242,3 +338,4 @@ class ResizingFrame(tk.Frame):
         self.app.tile_generator.frame_width = self.width
         self.app.tile_generator.frame_height = self.height
         self.app.draw_image_on_canvas()
+
