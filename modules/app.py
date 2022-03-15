@@ -47,8 +47,13 @@ class App(tk.Tk):
         
         self.tk_map = ImageTk.PhotoImage(image_map)
 
+        self.mapwindow = Toplevel()
+        self.mapwindow.geometry('260x260')
+        self.mapwindow.title('Slide Map')
+        self.mapwindow.attributes('-topmost', True)
+
         self.canvas_map = Canvas(
-            self.root_window,
+            self.mapwindow,
             height=256,
             width=256,
             bg="#fff"
@@ -63,23 +68,23 @@ class App(tk.Tk):
 
         self.canvas_map.bind("<Button-1>", self.mouse_click)
 
-        self.zoomLabel = tk.Label(root_window, text=str(level) + "x", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
-        # self.zoomLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
-        self.zoomLabel.place(x=18, y=420)
+        self.zoomLabel = tk.Label(self.frame2, text=str(level) + "x", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
+        self.zoomLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
+        # self.zoomLabel.place(x=18, y=420)
 
-        self.fileLabel = tk.Label(self.root_window, text=str("Source:\n" + self.root_window.file_name), bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove", width=20)
+        self.fileLabel = tk.Label(self.frame2, text=str("Source:\n" + self.root_window.file_name), bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove", width=20)
         self.fileLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
-        self.fileLabel.place(x=18,y=300)
+        # self.fileLabel.place(x=18,y=300)
 
-        self.buttonClose = tk.Button(self.root_window, text="Close", command=self.on_closing)
+        self.buttonClose = tk.Button(self.frame2, text="Close", command=self.on_closing)
         self.buttonClose.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
-        self.buttonClose.place(x=200, y=420)
+        # self.buttonClose.place(x=200, y=420)
 
         self.frame = ResizingFrame(self.root_window, self)
         # self.frame = tk.Canvas(self.root_window, width=850, height=700)
         self.frame.config(bg='gray80')
-        # self.frame.pack(fill=tk.BOTH, expand=tk.YES)
-        self.frame.place(relx=0.2,rely=0.05)
+        self.frame.pack(fill=tk.BOTH, expand=tk.YES)
+        # self.frame.place(relx=0.2,rely=0.05)
 
         self.button1 = tk.Button(self.frame, text='Button1')
 
@@ -280,7 +285,7 @@ class App(tk.Tk):
             
             self.canvas_map.delete("all")
             self.canvas_map.create_image(0, 0, image=self.tk_map, anchor="nw")
-            self.canvas_map.create_rectangle(new_coordinates[0],new_coordinates[3],new_coordinates[2],new_coordinates[1])
+            self.canvas_map.create_rectangle(new_coordinates[0],new_coordinates[3],new_coordinates[2],new_coordinates[1],outline="red", width=2)
         else:
             self.canvas_map.delete("all")
             self.canvas_map.create_image(0, 0, image=self.tk_map, anchor="nw")
