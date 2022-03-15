@@ -16,7 +16,8 @@ import sys
 
 # async def app_fn():
 class App(tk.Tk):
-    def __init__(self, root_window, deep_zoom_object, tiles_folder, level=0):
+    #def __init__(self, root_window, deep_zoom_object, tiles_folder, level=0):
+    def __init__(self, root_window, deep_zoom_object, image_map, tiles_folder, level=0):
 
         self.root_window = root_window
 
@@ -43,30 +44,24 @@ class App(tk.Tk):
         # ws.title('PythonGuides')
         # ws.geometry('256x256')
 
-        slide = openslide.OpenSlide("H:\Sigma\Gaze Tracking project\Datasets\Whole Slide images\D-001-18.svs")
-        deep_object = deepzoom.DeepZoomGenerator(slide)
-        image1 = deep_object.get_tile(9,(0,0))
-        # img = Image.open(image1)
-        self.pimg = ImageTk.PhotoImage(image1)
+        
+        self.tk_map = ImageTk.PhotoImage(image_map)
 
-        self.canvas1 = Canvas(
+        self.canvas_map = Canvas(
             self.root_window,
             height=256,
             width=256,
             bg="#fff"
             )
-        self.canvas1.place(x=0,y=0)    
+        self.canvas_map.place(x=0,y=0)    
         # self.canvas1.pack(side=TOP, anchor=NW)
 
-        # img = PhotoImage(pimg)
-        self.canvas1.create_image(0, 0, image=self.pimg, anchor="nw")
+        
+        self.canvas_map.create_image(0, 0, image=self.tk_map, anchor="nw")
 
-        # r1 = self.canvas1.create_rectangle(
-        # 30, 30, 180, 120,
-        # outline="#fb0",
-        # fill= None)
+        
 
-        self.canvas1.bind("<Button-1>", self.mouse_click)
+        self.canvas_map.bind("<Button-1>", self.mouse_click)
 
         self.zoomLabel = tk.Label(root_window, text=str(level) + "x", bg='gray90', font=("Helvetica", 14), borderwidth=2, relief="groove")
         # self.zoomLabel.pack(side=tk.LEFT, padx=(5, 5), pady=(15, 15))
@@ -88,7 +83,7 @@ class App(tk.Tk):
 
         self.button1 = tk.Button(self.frame, text='Button1')
 
-        self.canvas = tk.Canvas(self.frame, bg="gray90", width=850, height=700)
+        self.canvas = tk.Canvas(self.frame, bg="gray90", width=900, height=750)
 
         # set up the horizontal scroll bar
         self.hbar = tk.Scrollbar(self.frame, orient=tk.HORIZONTAL)
@@ -201,7 +196,7 @@ class App(tk.Tk):
         self.canvas.xview_moveto(scrollbar_x)
         self.canvas.yview_moveto(scrollbar_y)
 
-        self.coordinates(self.box_coords, self.tile_generator.level)
+        self.active_region(self.box_coords, self.tile_generator.level)
 
         self.draw_image_on_canvas()
 
@@ -262,7 +257,7 @@ class App(tk.Tk):
                 self.top_left[0], self.top_left[1], image=self.image, anchor="nw")
             
             # self.create_circle(3,3,2,self.c)
-            self.coordinates(box_coords, self.tile_generator.level)
+            self.active_region(box_coords, self.tile_generator.level)
         
 
     # virtual method
@@ -277,17 +272,18 @@ class App(tk.Tk):
             self.root_window.destroy()
 
 
-    def coordinates(self, coordinates, level):
+    #function for displaying active region on map
+    def active_region(self, coordinates, level):
         if level > 12:
             coordinates_list = list(coordinates)
             new_coordinates = [int(element / (2**(level - 9))) for element in coordinates_list]
-            #print("hello")
-            self.canvas1.delete("all")
-            self.canvas1.create_image(0, 0, image=self.pimg, anchor="nw")
-            self.canvas1.create_rectangle(new_coordinates[0],new_coordinates[3],new_coordinates[2],new_coordinates[1])
+            
+            self.canvas_map.delete("all")
+            self.canvas_map.create_image(0, 0, image=self.tk_map, anchor="nw")
+            self.canvas_map.create_rectangle(new_coordinates[0],new_coordinates[3],new_coordinates[2],new_coordinates[1])
         else:
-            self.canvas1.delete("all")
-            self.canvas1.create_image(0, 0, image=self.pimg, anchor="nw")
+            self.canvas_map.delete("all")
+            self.canvas_map.create_image(0, 0, image=self.tk_map, anchor="nw")
         #print(coordinates, new_coordinates[0], new_coordinates[1], level)
 
     def mouse_click(self,event):
@@ -296,16 +292,16 @@ class App(tk.Tk):
         width = self.frame.width/ (2**(level - 9))
         height = self.frame.height/ (2**(level - 9))
         max_coord = self.deep_zoom_object.level_dimensions[9]
-        self.canvas1.delete("all")
-        self.canvas1.create_image(0, 0, image=self.pimg, anchor="nw")
-        self.canvas1.create_rectangle(event.x,event.y, event.x + width, event.y + height)
+        self.canvas_map.delete("all")
+        self.canvas_map.create_image(0, 0, image=self.tk_map, anchor="nw")
+        self.canvas_map.create_rectangle(event.x,event.y, event.x + width, event.y + height)
         # self.move_to(event)
         coords = [event.x,event.y, event.x + width, event.y + height]
         # new_coord = [coord * (2**(level - 9)) for coord in coords]
         new_coord_x = coords[0]/max_coord[0]
         new_coord_y = coords[1]/max_coord[1]
 
-        print(new_coord_x,new_coord_y)
+        #print(new_coord_x,new_coord_y)
         # event.x=width
         # event.y=height
         # self.__scroll_x(moveto = event.x)

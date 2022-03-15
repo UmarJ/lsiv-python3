@@ -6,15 +6,15 @@ import tkinter as tk
 from PIL import ImageTk
 from functools import partial
 from threading import Thread
-import slide_map1
+#import slide_map1
 import asyncio
 
 
 class Recorder(App):
-    def __init__(self, root_window, deep_zoom_object, level=0):
+    def __init__(self, root_window, deep_zoom_object, image_map, level=0):
         tiles_folder = set_up_folder(deep_zoom_object, root_window.file_name, root_window.file_path)
         # Python 2.x compatible constructor
-        App.__init__(self, root_window, deep_zoom_object, tiles_folder, level=level)
+        App.__init__(self, root_window, deep_zoom_object, image_map,tiles_folder, level=level)
 
         assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..//assets")
 

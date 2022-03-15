@@ -45,7 +45,10 @@ class LevelSelection:
         frame = tk.Frame(root)
         frame.focus_force()
         slide = open_slide(root.file_path)
+        
+
         dz_generator = DeepZoomGenerator(slide)
+        image_map = dz_generator.get_tile(9,(0,0))
 
         select_level = ttk.Label(frame, text="Select Initial Level")
         select_level.pack()
@@ -63,7 +66,7 @@ class LevelSelection:
         def on_button_press(event):
             frame.pack_forget()
 
-            Recorder(root, deep_zoom_object=dz_generator, level=int(selection.get()))
+            Recorder(root, deep_zoom_object=dz_generator, image_map=image_map, level=int(selection.get()))
             #     print ("Recorder")
 
             # # if tiles_dirctory is provided in args, the visualiser tool is run

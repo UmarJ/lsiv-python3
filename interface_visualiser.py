@@ -94,10 +94,13 @@ class LevelSelection:
             else:
                 frame.pack_forget()
                 slide = open_slide(entry_file_path.get())
+                
+                # slide = openslide.OpenSlide("H:\Sigma\Gaze Tracking project\Datasets\Whole Slide images\D-001-18.svs")
                 dz_generator = DeepZoomGenerator(slide)
-
+                image_map = dz_generator.get_tile(9,(0,0))
+ 
                 # Start main program
-                Visualiser(root, deep_zoom_object=dz_generator, level=int(selection.get()))
+                Visualiser(root, deep_zoom_object=dz_generator, image_map=image_map, level=int(selection.get()))
                 print ("Visualiser")
 
         browse.bind('<ButtonRelease>', source_file_selection)
