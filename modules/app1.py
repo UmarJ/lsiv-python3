@@ -53,27 +53,54 @@ class App1(tk.Tk):
 
         self.button1 = tk.Button(self.frame, text='Button1')
 
-        self.canvas = tk.Canvas(self.frame, bg="gray80", width=850, height=700)
+
+
+        self.image1 = PIL.Image.open(self.img)
+        self.x,self.y=self.image1.size
+        self.image2 = ImageTk.PhotoImage(self.image1)
+
+        self.canvas = tk.Canvas(self.frame, bg="gray80", width=1000, height=1000,scrollregion=(0,0,self.x,self.y))
 
         # set up the horizontal scroll bar
         self.hbar = tk.Scrollbar(self.frame, orient=tk.HORIZONTAL)
         self.hbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.hbar.config(command=self.canvas.xview)
+       
 
         # set up the vertical scroll bar
         self.vbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
         self.vbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.top_left = (-1, -1)
-
+        # self.vbar.config(command=self._scroll_y)
+        self.vbar.config(command=self.canvas.yview)
+        
         self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
         self.canvas.pack(expand=tk.YES, fill=tk.BOTH, padx=(100, 100), pady=(0, 10))
+        
+        
 
-        self.image1 = PIL.Image.open(self.img)
-        self.image2 = ImageTk.PhotoImage(self.image1)  
-        self.canvas.create_image(100,100, image=self.image2)
+          
+
+        self.canvas['xscrollcommand'] = self.hbar.set
+        
+        self.canvas.create_image(0,0, image=self.image2,anchor=tk.NW)
 
         self.root_window.mainloop()        
             
+    def set_scroll_region(self):
+        self.canvas.config(scrollregion=(0, 0, 4000, 4000))        
+
+
+    def __scroll_x(self, *args):
+        # scroll canvas horizontally and redraw the image
+        self.canvas.xview(*args)
+        
+    def __scroll_y(self, *args):
+        # scroll canvas horizontally and redraw the image
+        self.canvas.yview(*args)
+        
+
+
+
     # virtual method
     def get_image(self, box_coords):
         raise NotImplementedError()
