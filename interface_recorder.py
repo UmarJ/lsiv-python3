@@ -6,6 +6,8 @@ from tkinter import ttk
 from openslide import open_slide
 from openslide.deepzoom import DeepZoomGenerator
 from modules.recorder import Recorder
+from modules.app1 import App1
+
 
 class FileSelection:
 
@@ -33,14 +35,16 @@ class FileSelection:
         # separate the file name from the full path
         root.file_name = os.path.basename(root.file_path)
         print("root.file_path: {}".format(root.file_path))
+        ext = os.path.splitext(root.file_path)[1]
+        print(ext)
 
         self.frame.pack_forget()
-        self.app = LevelSelection(self.master)
+        self.app = LevelSelection(self.master,ext)
 
 
 class LevelSelection:
 
-    def __init__(self, master):
+    def __init__(self, master,ext):
 
         frame = tk.Frame(root)
         frame.focus_force()
@@ -65,8 +69,12 @@ class LevelSelection:
 
         def on_button_press(event):
             frame.pack_forget()
-
-            Recorder(root, deep_zoom_object=dz_generator, image_map=image_map, level=int(selection.get()))
+            if ext == ".svs":
+                Recorder(root, deep_zoom_object=dz_generator, image_map=image_map, level=int(selection.get()))
+            else:
+                App1(root, root.file_path)
+            
+                
             #     print ("Recorder")
 
             # # if tiles_dirctory is provided in args, the visualiser tool is run
